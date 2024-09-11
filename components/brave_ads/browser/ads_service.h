@@ -12,9 +12,8 @@
 #include <vector>
 
 #include "base/time/time.h"
-#include "base/values.h"
 #include "brave/components/brave_ads/browser/ads_service_callback.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"  // IWYU pragma: keep
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-forward.h"
 #include "brave/components/brave_ads/core/public/ad_units/new_tab_page_ad/new_tab_page_ad_info.h"
 #include "brave/components/brave_ads/core/public/ads_callback.h"
 #include "brave/components/services/bat_ads/public/interfaces/bat_ads.mojom.h"
@@ -59,7 +58,8 @@ class AdsService : public KeyedService {
 
   // Called to add an ads observer.
   virtual void AddBatAdsObserver(
-      mojo::PendingRemote<bat_ads::mojom::BatAdsObserver> observer) = 0;
+      mojo::PendingRemote<bat_ads::mojom::BatAdsObserver>
+          bat_ads_observer_pending_remote) = 0;
 
   // Called to get diagnostics to help identify issues. The callback takes one
   // argument - `base::Value::List` containing info of the obtained diagnostics.
@@ -79,7 +79,7 @@ class AdsService : public KeyedService {
       MaybeServeInlineContentAdAsDictCallback callback) = 0;
 
   // Called when a user views or interacts with an inline content ad to trigger
-  // an `event_type` event for the specified `placement_id` and
+  // a `mojom_ad_event_type` event for the specified `placement_id` and
   // `creative_instance_id`. `placement_id` should be a 128-bit random GUID in
   // the form of version 4. See RFC 4122, section 4.4. The same `placement_id`
   // generated for the viewed impression event should be used for all other
@@ -89,7 +89,7 @@ class AdsService : public KeyedService {
   virtual void TriggerInlineContentAdEvent(
       const std::string& placement_id,
       const std::string& creative_instance_id,
-      mojom::InlineContentAdEventType event_type,
+      mojom::InlineContentAdEventType mojom_ad_event_type,
       TriggerAdEventCallback callback) = 0;
 
   // Called to prefetch a new tab page ad.
@@ -105,21 +105,22 @@ class AdsService : public KeyedService {
       const std::string& placement_id,
       const std::string& creative_instance_id) = 0;
 
-  // Called when a user views or interacts with a new tab page ad to trigger an
-  // `event_type` event for the specified `placement_id` and
+  // Called when a user views or interacts with a new tab page ad to trigger a
+  // `mojom_ad_event_type` event for the specified `placement_id` and
   // `creative_instance_id`. `placement_id` should be a 128-bit random GUID in
   // the form of version 4. See RFC 4122, section 4.4. The same `placement_id`
   // generated for the viewed impression event should be used for all other
   // events for the same ad placement. The callback takes one argument - `bool`
   // is set to `true if successful otherwise `false`. Must be called before the
   // `mojom::NewTabPageAdEventType::target_url` landing page is opened.
-  virtual void TriggerNewTabPageAdEvent(const std::string& placement_id,
-                                        const std::string& creative_instance_id,
-                                        mojom::NewTabPageAdEventType event_type,
-                                        TriggerAdEventCallback callback) = 0;
+  virtual void TriggerNewTabPageAdEvent(
+      const std::string& placement_id,
+      const std::string& creative_instance_id,
+      mojom::NewTabPageAdEventType mojom_ad_event_type,
+      TriggerAdEventCallback callback) = 0;
 
   // Called when a user views or interacts with a promoted content ad to trigger
-  // an `event_type` event for the specified `placement_id` and
+  // a `mojom_ad_event_type` event for the specified `placement_id` and
   // `creative_instance_id`. `placement_id` should be a 128-bit random GUID in
   // the form of version 4. See RFC 4122, section 4.4. The same `placement_id`
   // generated for the viewed impression event should be used for all other
@@ -129,24 +130,24 @@ class AdsService : public KeyedService {
   virtual void TriggerPromotedContentAdEvent(
       const std::string& placement_id,
       const std::string& creative_instance_id,
-      mojom::PromotedContentAdEventType event_type,
+      mojom::PromotedContentAdEventType mojom_ad_event_type,
       TriggerAdEventCallback callback) = 0;
 
-  // Called when a user views or interacts with a search result ad to trigger an
-  // `event_type` event for the ad specified in `mojom_creative_ad`. The
-  // callback takes one argument - `bool` is set to `true` if successful
+  // Called when a user views or interacts with a search result ad to trigger a
+  // `mojom_ad_event_type` event for the ad specified in `mojom_creative_ad`.
+  // The callback takes one argument - `bool` is set to `true` if successful
   // otherwise `false`. Must be called before the
   // `mojom::CreativeSearchResultAdInfo::target_url` landing page is opened.
   virtual void TriggerSearchResultAdEvent(
       mojom::CreativeSearchResultAdInfoPtr mojom_creative_ad,
-      mojom::SearchResultAdEventType event_type,
+      mojom::SearchResultAdEventType mojom_ad_event_type,
       TriggerAdEventCallback callback) = 0;
 
-  // Called to purge orphaned served ad events for the specified `ad_type`
+  // Called to purge orphaned served ad events for the specified `mojom_ad_type`
   // before calling `MaybeServe*Ad`. The callback takes one argument - `bool` is
   // set to `true` if successful otherwise `false`.
   virtual void PurgeOrphanedAdEventsForType(
-      mojom::AdType ad_type,
+      mojom::AdType mojom_ad_type,
       PurgeOrphanedAdEventsForTypeCallback callback) = 0;
 
   // Called to get ad history for the given date range in descending order. The
@@ -159,38 +160,39 @@ class AdsService : public KeyedService {
   // Called to like an ad. This is a toggle, so calling it again returns the
   // setting to the neutral state. The callback takes one argument - `bool` is
   // set to `true` if successful otherwise `false`.
-  virtual void ToggleLikeAd(base::Value::Dict value,
+  virtual void ToggleLikeAd(mojom::ReactionInfoPtr mojom_reaction,
                             ToggleReactionCallback callback) = 0;
 
   // Called to dislike an ad. This is a toggle, so calling it again returns the
   // setting to the neutral state. The callback takes one argument - `bool` is
   // set to `true` if successful otherwise `false`.
-  virtual void ToggleDislikeAd(base::Value::Dict value,
+  virtual void ToggleDislikeAd(mojom::ReactionInfoPtr mojom_reaction,
                                ToggleReactionCallback callback) = 0;
 
   // Called to like a category. This is a toggle, so calling it again returns
   // the setting to the neutral state. The callback takes one argument - `bool`
   // is set to `true` if successful otherwise `false`.
-  virtual void ToggleLikeSegment(base::Value::Dict value,
+  virtual void ToggleLikeSegment(mojom::ReactionInfoPtr mojom_reaction,
                                  ToggleReactionCallback callback) = 0;
 
   // Called to dislike a category. This is a toggle, so calling it again
   // returns the setting to the neutral state. The callback takes one argument -
   // `bool` is set to `true` if successful otherwise `false`.
-  virtual void ToggleDislikeSegment(base::Value::Dict value,
+  virtual void ToggleDislikeSegment(mojom::ReactionInfoPtr mojom_reaction,
                                     ToggleReactionCallback callback) = 0;
 
   // Called to save an ad for later viewing. This is a toggle, so calling it
   // again removes the ad from the saved list. The callback takes one argument -
   // `bool` is set to `true` if successful otherwise `false`.
-  virtual void ToggleSaveAd(base::Value::Dict value,
+  virtual void ToggleSaveAd(mojom::ReactionInfoPtr reactimojom_reactionon,
                             ToggleReactionCallback callback) = 0;
 
   // Called to mark an ad as inappropriate. This is a toggle, so calling it
   // again unmarks the ad. The callback takes one argument - `bool` is
   // set to `true` if successful otherwise `false`.
-  virtual void ToggleMarkAdAsInappropriate(base::Value::Dict value,
-                                           ToggleReactionCallback callback) = 0;
+  virtual void ToggleMarkAdAsInappropriate(
+      mojom::ReactionInfoPtr mojom_reaction,
+      ToggleReactionCallback callback) = 0;
 
   // Called when the page for `tab_id` has loaded and the content is available
   // for analysis. `redirect_chain` containing a list of redirect URLs that

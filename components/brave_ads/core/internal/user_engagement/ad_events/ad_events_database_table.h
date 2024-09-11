@@ -27,26 +27,27 @@ class AdEvents final : public TableInterface {
   void GetAll(GetAdEventsCallback callback) const;
   // Get unexpired ad events, sorted in descending order.
   void GetUnexpired(GetAdEventsCallback callback) const;
-  void GetUnexpired(mojom::AdType ad_type, GetAdEventsCallback callback) const;
+  void GetUnexpired(mojom::AdType mojom_ad_type,
+                    GetAdEventsCallback callback) const;
 
   void PurgeExpired(ResultCallback callback) const;
 
-  void PurgeOrphaned(mojom::AdType ad_type, ResultCallback callback) const;
+  void PurgeOrphaned(mojom::AdType mojom_ad_type,
+                     ResultCallback callback) const;
   void PurgeOrphaned(const std::vector<std::string>& placement_ids,
                      ResultCallback callback) const;
   void PurgeAllOrphaned(ResultCallback callback) const;
 
   std::string GetTableName() const override;
-
-  void Create(mojom::DBTransactionInfo* mojom_db_transaction) override;
-  void Migrate(mojom::DBTransactionInfo* mojom_db_transaction,
+  void Create(const mojom::DBTransactionInfoPtr& mojom_db_transaction) override;
+  void Migrate(const mojom::DBTransactionInfoPtr& mojom_db_transaction,
                int to_version) override;
 
  private:
-  void Insert(mojom::DBTransactionInfo* mojom_db_transaction,
+  void Insert(const mojom::DBTransactionInfoPtr& mojom_db_transaction,
               const AdEventList& ad_event);
 
-  std::string BuildInsertSql(mojom::DBActionInfo* mojom_db_action,
+  std::string BuildInsertSql(const mojom::DBActionInfoPtr& mojom_db_action,
                              const AdEventList& ad_events) const;
 };
 

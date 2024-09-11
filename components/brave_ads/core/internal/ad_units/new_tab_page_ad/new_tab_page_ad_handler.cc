@@ -16,8 +16,7 @@
 #include "brave/components/brave_ads/core/internal/targeting/geographical/subdivision/subdivision_targeting.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/new_tab_page_ads/new_tab_page_ad_event_handler.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/site_visit/site_visit.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-shared.h"
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "brave/components/brave_ads/core/public/ad_units/new_tab_page_ad/new_tab_page_ad_info.h"
 #include "brave/components/brave_ads/core/public/ads_callback.h"
 #include "brave/components/brave_ads/core/public/ads_feature.h"
@@ -31,7 +30,7 @@ void FireServedEventCallback(
     MaybeServeNewTabPageAdCallback callback,
     const bool success,
     const std::string& /*placement_id*/,
-    const mojom::NewTabPageAdEventType /*event_type*/) {
+    const mojom::NewTabPageAdEventType /*mojom_ad_event_type*/) {
   if (!success) {
     return std::move(callback).Run(/*ad=*/std::nullopt);
   }
@@ -39,10 +38,11 @@ void FireServedEventCallback(
   std::move(callback).Run(ad);
 }
 
-void FireEventCallback(TriggerAdEventCallback callback,
-                       const bool success,
-                       const std::string& /*placement_id*/,
-                       const mojom::NewTabPageAdEventType /*event_type*/) {
+void FireEventCallback(
+    TriggerAdEventCallback callback,
+    const bool success,
+    const std::string& /*placement_id*/,
+    const mojom::NewTabPageAdEventType /*mojom_ad_event_type*/) {
   std::move(callback).Run(success);
 }
 
@@ -79,7 +79,7 @@ void NewTabPageAdHandler::MaybeServe(MaybeServeNewTabPageAdCallback callback) {
 void NewTabPageAdHandler::TriggerEvent(
     const std::string& placement_id,
     const std::string& creative_instance_id,
-    const mojom::NewTabPageAdEventType event_type,
+    const mojom::NewTabPageAdEventType mojom_ad_event_type,
     TriggerAdEventCallback callback) {
   if (creative_instance_id.empty()) {
     // No-op if `creative_instance_id` is empty. This should only occur for
@@ -98,7 +98,7 @@ void NewTabPageAdHandler::TriggerEvent(
   }
 
   if (!UserHasJoinedBraveRewards() &&
-      event_type == mojom::NewTabPageAdEventType::kViewedImpression) {
+      mojom_ad_event_type == mojom::NewTabPageAdEventType::kViewedImpression) {
     // `MaybeServe` will trigger a `kServedImpression` event if the user has
     // joined Brave Rewards; otherwise, we need to trigger a `kServedImpression`
     // event when triggering a `kViewedImpression` event for non-Rewards users.
@@ -111,7 +111,7 @@ void NewTabPageAdHandler::TriggerEvent(
   }
 
   event_handler_.FireEvent(
-      placement_id, creative_instance_id, event_type,
+      placement_id, creative_instance_id, mojom_ad_event_type,
       base::BindOnce(&FireEventCallback, std::move(callback)));
 }
 
@@ -135,7 +135,7 @@ void NewTabPageAdHandler::TriggerServedEventCallback(
     TriggerAdEventCallback callback,
     const bool success,
     const std::string& placement_id,
-    const mojom::NewTabPageAdEventType /*event_type*/) {
+    const mojom::NewTabPageAdEventType /*mojom_ad_event_type*/) {
   if (!success) {
     return std::move(callback).Run(/*success=*/false);
   }
@@ -149,7 +149,7 @@ void NewTabPageAdHandler::TriggerServedEventCallback(
 void NewTabPageAdHandler::OnOpportunityAroseToServeNewTabPageAd() {
   BLOG(1, "Opportunity arose to serve a new tab page ad");
 
-  RecordP2AAdOpportunity(AdType::kNewTabPageAd, /*segments=*/{});
+  RecordP2AAdOpportunity(mojom::AdType::kNewTabPageAd, /*segments=*/{});
 }
 
 void NewTabPageAdHandler::OnDidServeNewTabPageAd(const NewTabPageAdInfo& ad) {
@@ -184,10 +184,11 @@ void NewTabPageAdHandler::OnDidFireNewTabPageAdViewedEvent(
               << ad.placement_id << " and creative instance id "
               << ad.creative_instance_id);
 
-  AdHistoryManager::GetInstance().Add(ad, ConfirmationType::kViewedImpression);
+  AdHistoryManager::GetInstance().Add(
+      ad, mojom::ConfirmationType::kViewedImpression);
 
   GetAccount().Deposit(ad.creative_instance_id, ad.segment, ad.type,
-                       ConfirmationType::kViewedImpression);
+                       mojom::ConfirmationType::kViewedImpression);
 }
 
 void NewTabPageAdHandler::OnDidFireNewTabPageAdClickedEvent(
@@ -198,10 +199,10 @@ void NewTabPageAdHandler::OnDidFireNewTabPageAdClickedEvent(
 
   site_visit_->SetLastClickedAd(ad);
 
-  AdHistoryManager::GetInstance().Add(ad, ConfirmationType::kClicked);
+  AdHistoryManager::GetInstance().Add(ad, mojom::ConfirmationType::kClicked);
 
   GetAccount().Deposit(ad.creative_instance_id, ad.segment, ad.type,
-                       ConfirmationType::kClicked);
+                       mojom::ConfirmationType::kClicked);
 }
 
 void NewTabPageAdHandler::OnDidFireNewTabPageAdMediaPlayEvent(
@@ -211,7 +212,7 @@ void NewTabPageAdHandler::OnDidFireNewTabPageAdMediaPlayEvent(
               << ad.creative_instance_id);
 
   GetAccount().Deposit(ad.creative_instance_id, ad.segment, ad.type,
-                       ConfirmationType::kMediaPlay);
+                       mojom::ConfirmationType::kMediaPlay);
 }
 
 void NewTabPageAdHandler::OnDidFireNewTabPageAdMedia25Event(
@@ -221,7 +222,7 @@ void NewTabPageAdHandler::OnDidFireNewTabPageAdMedia25Event(
               << ad.creative_instance_id);
 
   GetAccount().Deposit(ad.creative_instance_id, ad.segment, ad.type,
-                       ConfirmationType::kMedia25);
+                       mojom::ConfirmationType::kMedia25);
 }
 
 void NewTabPageAdHandler::OnDidFireNewTabPageAdMedia100Event(
@@ -231,7 +232,7 @@ void NewTabPageAdHandler::OnDidFireNewTabPageAdMedia100Event(
               << ad.creative_instance_id);
 
   GetAccount().Deposit(ad.creative_instance_id, ad.segment, ad.type,
-                       ConfirmationType::kMedia100);
+                       mojom::ConfirmationType::kMedia100);
 }
 
 }  // namespace brave_ads

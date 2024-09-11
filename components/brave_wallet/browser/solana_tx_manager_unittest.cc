@@ -1691,8 +1691,7 @@ TEST_F(SolanaTxManagerUnitTest, GetTransactionMessageToSign) {
   std::vector<mojom::HardwareWalletAccountPtr> hw_infos;
   hw_infos.push_back(mojom::HardwareWalletAccount::New(
       "89DzXVKJ79xf9MkzTxatQESh5fcvsqBo9fCsbAXkCaZE", "path", "name 1",
-      mojom::HardwareVendor::kLedger, "device1", mojom::CoinType::SOL,
-      mojom::KeyringId::kSolana));
+      mojom::HardwareVendor::kLedger, "device1", mojom::KeyringId::kSolana));
   auto from = keyring_service_->AddHardwareAccountsSync(std::move(hw_infos))[0]
                   ->account_id->Clone();
   const std::string to = "148FvZU6e67eSB12wv7fXCH5FsTDW8tsxXo3nFuZhfCF";
@@ -1736,8 +1735,7 @@ TEST_F(SolanaTxManagerUnitTest, ProcessSolanaHardwareSignature) {
   std::vector<mojom::HardwareWalletAccountPtr> hw_infos;
   hw_infos.push_back(mojom::HardwareWalletAccount::New(
       "89DzXVKJ79xf9MkzTxatQESh5fcvsqBo9fCsbAXkCaZE", "path", "name 1",
-      mojom::HardwareVendor::kLedger, "device1", mojom::CoinType::SOL,
-      mojom::KeyringId::kSolana));
+      mojom::HardwareVendor::kLedger, "device1", mojom::KeyringId::kSolana));
   auto from = keyring_service_->AddHardwareAccountsSync(std::move(hw_infos))[0]
                   ->account_id.Clone();
   const std::string to = "148FvZU6e67eSB12wv7fXCH5FsTDW8tsxXo3nFuZhfCF";
@@ -2100,7 +2098,8 @@ TEST_F(SolanaTxManagerUnitTest, MakeBubbleGumProgramTransferTxData) {
 
   mojom::SolanaTxDataPtr expected_tx_data = mojom::SolanaTxData::New(
       "", 0, "FBG2vwk2tGKHbEWHSxf7rJGDuZ2eHaaNQ8u6c7xGt9Yv",
-      "4szaz6FsfBzwcCJYjbwZWEw3E8rKB4tz76644C8sAZo9", "", 0, 0,
+      "4szaz6FsfBzwcCJYjbwZWEw3E8rKB4tz76644C8sAZo9",
+      "2iZBbRGnLVEEZH6JDsaNsTo66s2uxx7DTchVWKU8oisR", 0, 0,
       mojom::TransactionType::SolanaCompressedNftTransfer,
       std::move(instructions), mojom::SolanaMessageVersion::kLegacy,
       mojom::SolanaMessageHeader::New(1, 0, 30),

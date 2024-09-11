@@ -10,7 +10,6 @@
 #include "brave/components/brave_ads/core/internal/ad_units/search_result_ad/search_result_ad_info.h"
 #include "brave/components/brave_ads/core/internal/common/test/test_base.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/ad_event_test_util.h"
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
 #include "brave/components/brave_ads/core/public/ad_units/search_result_ad/search_result_ad_feature.h"
 #include "brave/components/brave_ads/core/public/ad_units/search_result_ad/search_result_ad_test_util.h"
 
@@ -36,8 +35,7 @@ TEST_F(BraveAdsSearchResultAdsPerDayPermissionRuleTest,
 
   const SearchResultAdInfo ad =
       test::BuildSearchResultAd(/*should_generate_random_uuids=*/true);
-
-  test::RecordAdEvents(ad, ConfirmationType::kServedImpression,
+  test::RecordAdEvents(ad, mojom::ConfirmationType::kServedImpression,
                        /*count=*/kMaximumSearchResultAdsPerDay.Get() - 1);
 
   // Act & Assert
@@ -53,8 +51,7 @@ TEST_F(BraveAdsSearchResultAdsPerDayPermissionRuleTest,
 
   const SearchResultAdInfo ad =
       test::BuildSearchResultAd(/*should_generate_random_uuids=*/true);
-
-  test::RecordAdEvents(ad, ConfirmationType::kServedImpression,
+  test::RecordAdEvents(ad, mojom::ConfirmationType::kServedImpression,
                        /*count=*/kMaximumSearchResultAdsPerDay.Get());
 
   AdvanceClockBy(base::Days(1));
@@ -72,8 +69,7 @@ TEST_F(BraveAdsSearchResultAdsPerDayPermissionRuleTest,
 
   const SearchResultAdInfo ad =
       test::BuildSearchResultAd(/*should_generate_random_uuids=*/true);
-
-  test::RecordAdEvents(ad, ConfirmationType::kServedImpression,
+  test::RecordAdEvents(ad, mojom::ConfirmationType::kServedImpression,
                        /*count=*/kMaximumSearchResultAdsPerDay.Get());
 
   AdvanceClockBy(base::Days(1) - base::Milliseconds(1));

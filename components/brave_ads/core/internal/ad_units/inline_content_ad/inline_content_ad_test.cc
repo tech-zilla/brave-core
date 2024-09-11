@@ -13,8 +13,7 @@
 #include "brave/components/brave_ads/core/internal/common/test/test_base.h"
 #include "brave/components/brave_ads/core/internal/serving/permission_rules/permission_rules_test_util.h"
 #include "brave/components/brave_ads/core/internal/settings/settings_test_util.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-shared.h"
-#include "brave/components/brave_ads/core/public/ad_units/ad_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "brave/components/brave_ads/core/public/ad_units/inline_content_ad/inline_content_ad_info.h"
 #include "brave/components/brave_ads/core/public/ads.h"
 #include "brave/components/brave_ads/core/public/ads_callback.h"
@@ -50,12 +49,12 @@ class BraveAdsInlineContentAdIntegrationTest : public test::TestBase {
   void TriggerInlineContentAdEventAndVerifiyExpectations(
       const std::string& placement_id,
       const std::string& creative_instance_id,
-      const mojom::InlineContentAdEventType event_type,
+      const mojom::InlineContentAdEventType mojom_ad_event_type,
       const bool should_fire_event) {
     base::MockCallback<TriggerAdEventCallback> callback;
     EXPECT_CALL(callback, Run(/*success=*/should_fire_event));
     GetAds().TriggerInlineContentAdEvent(placement_id, creative_instance_id,
-                                         event_type, callback.Get());
+                                         mojom_ad_event_type, callback.Get());
   }
 };
 
@@ -66,7 +65,7 @@ TEST_F(BraveAdsInlineContentAdIntegrationTest, ServeAd) {
   // Act & Assert
   EXPECT_CALL(ads_client_mock_,
               RecordP2AEvents(BuildP2AAdOpportunityEvents(
-                  AdType::kInlineContentAd, /*segments=*/{})));
+                  mojom::AdType::kInlineContentAd, /*segments=*/{})));
 
   base::MockCallback<MaybeServeInlineContentAdCallback> callback;
   EXPECT_CALL(callback, Run(kDimensions, /*ad=*/::testing::Ne(std::nullopt)));

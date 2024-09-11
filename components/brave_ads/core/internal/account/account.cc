@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "base/check_op.h"
-#include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
 #include "brave/components/brave_ads/core/internal/account/account_util.h"
 #include "brave/components/brave_ads/core/internal/account/confirmations/confirmation_info.h"
@@ -25,8 +24,7 @@
 #include "brave/components/brave_ads/core/internal/common/logging_util.h"
 #include "brave/components/brave_ads/core/internal/prefs/pref_path_util.h"
 #include "brave/components/brave_ads/core/internal/settings/settings.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"  // IWYU pragma: keep
-#include "brave/components/brave_ads/core/public/ad_units/ad_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "brave/components/brave_ads/core/public/ads_client/ads_client.h"
 
 namespace brave_ads {
@@ -56,14 +54,8 @@ void Account::RemoveObserver(AccountObserver* const observer) {
 void Account::SetWallet(const std::string& payment_id,
                         const std::string& recovery_seed_base64) {
   const std::optional<WalletInfo> wallet =
-      ToWallet(payment_id, recovery_seed_base64);
+      CreateWalletFromRecoverySeed(payment_id, recovery_seed_base64);
   if (!wallet) {
-    // TODO(https://github.com/brave/brave-browser/issues/32066):
-    // Detect potential defects using `DumpWithoutCrashing`.
-    SCOPED_CRASH_KEY_STRING64("Issue32066", "failure_reason",
-                              "Failed to initialize wallet");
-    base::debug::DumpWithoutCrashing();
-
     BLOG(0, "Failed to initialize wallet");
 
     return NotifyFailedToInitializeWallet();
@@ -78,35 +70,38 @@ void Account::SetWallet(const std::string& payment_id,
 void Account::GetStatement(GetStatementOfAccountsCallback callback) {
   if (!UserHasJoinedBraveRewards()) {
     // No-op if the user has not joined Brave Rewards.
-    return std::move(callback).Run(/*statement*/ nullptr);
+    return std::move(callback).Run(/*statement=*/nullptr);
   }
 
   return BuildStatement(std::move(callback));
 }
 
-void Account::Deposit(const std::string& creative_instance_id,
-                      const std::string& segment,
-                      const AdType ad_type,
-                      const ConfirmationType confirmation_type) const {
-  DepositWithUserData(creative_instance_id, segment, ad_type, confirmation_type,
+void Account::Deposit(
+    const std::string& creative_instance_id,
+    const std::string& segment,
+    const mojom::AdType mojom_ad_type,
+    const mojom::ConfirmationType mojom_confirmation_type) const {
+  DepositWithUserData(creative_instance_id, segment, mojom_ad_type,
+                      mojom_confirmation_type,
                       /*user_data=*/base::Value::Dict());
 }
 
-void Account::DepositWithUserData(const std::string& creative_instance_id,
-                                  const std::string& segment,
-                                  const AdType ad_type,
-                                  const ConfirmationType confirmation_type,
-                                  base::Value::Dict user_data) const {
+void Account::DepositWithUserData(
+    const std::string& creative_instance_id,
+    const std::string& segment,
+    const mojom::AdType mojom_ad_type,
+    const mojom::ConfirmationType mojom_confirmation_type,
+    base::Value::Dict user_data) const {
   CHECK(!creative_instance_id.empty());
-  CHECK_NE(AdType::kUndefined, ad_type);
-  CHECK_NE(ConfirmationType::kUndefined, confirmation_type);
+  CHECK_NE(mojom::AdType::kUndefined, mojom_ad_type);
+  CHECK_NE(mojom::ConfirmationType::kUndefined, mojom_confirmation_type);
 
-  if (!IsAllowedToDeposit(ad_type, confirmation_type)) {
+  if (!IsAllowedToDeposit(mojom_ad_type, mojom_confirmation_type)) {
     return;
   }
 
   const std::unique_ptr<DepositInterface> deposit =
-      DepositsFactory::Build(confirmation_type);
+      DepositsFactory::Build(mojom_confirmation_type);
   if (!deposit) {
     return;
   }
@@ -114,59 +109,63 @@ void Account::DepositWithUserData(const std::string& creative_instance_id,
   deposit->GetValue(
       creative_instance_id,
       base::BindOnce(&Account::DepositCallback, weak_factory_.GetWeakPtr(),
-                     creative_instance_id, segment, ad_type, confirmation_type,
-                     std::move(user_data)));
+                     creative_instance_id, segment, mojom_ad_type,
+                     mojom_confirmation_type, std::move(user_data)));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Account::DepositCallback(const std::string& creative_instance_id,
-                              const std::string& segment,
-                              const AdType ad_type,
-                              const ConfirmationType confirmation_type,
-                              base::Value::Dict user_data,
-                              const bool success,
-                              const double value) const {
+void Account::DepositCallback(
+    const std::string& creative_instance_id,
+    const std::string& segment,
+    const mojom::AdType mojom_ad_type,
+    const mojom::ConfirmationType mojom_confirmation_type,
+    base::Value::Dict user_data,
+    const bool success,
+    const double value) const {
   if (!success) {
-    return FailedToProcessDeposit(creative_instance_id, ad_type,
-                                  confirmation_type);
+    return FailedToProcessDeposit(creative_instance_id, mojom_ad_type,
+                                  mojom_confirmation_type);
   }
 
-  ProcessDeposit(creative_instance_id, segment, value, ad_type,
-                 confirmation_type, std::move(user_data));
+  ProcessDeposit(creative_instance_id, segment, value, mojom_ad_type,
+                 mojom_confirmation_type, std::move(user_data));
 }
 
-void Account::ProcessDeposit(const std::string& creative_instance_id,
-                             const std::string& segment,
-                             const double value,
-                             const AdType ad_type,
-                             const ConfirmationType confirmation_type,
-                             base::Value::Dict user_data) const {
+void Account::ProcessDeposit(
+    const std::string& creative_instance_id,
+    const std::string& segment,
+    const double value,
+    const mojom::AdType mojom_ad_type,
+    const mojom::ConfirmationType mojom_confirmation_type,
+    base::Value::Dict user_data) const {
   if (!UserHasJoinedBraveRewards()) {
     // If the user has not joined Brave Rewards, there's no need to record
     // transactions.
     return SuccessfullyProcessedDeposit(
-        BuildTransaction(creative_instance_id, segment, value, ad_type,
-                         confirmation_type),
+        BuildTransaction(creative_instance_id, segment, value, mojom_ad_type,
+                         mojom_confirmation_type),
         std::move(user_data));
   }
 
-  AddTransaction(
-      creative_instance_id, segment, value, ad_type, confirmation_type,
-      base::BindOnce(&Account::ProcessDepositCallback,
-                     weak_factory_.GetWeakPtr(), creative_instance_id, ad_type,
-                     confirmation_type, std::move(user_data)));
+  AddTransaction(creative_instance_id, segment, value, mojom_ad_type,
+                 mojom_confirmation_type,
+                 base::BindOnce(&Account::ProcessDepositCallback,
+                                weak_factory_.GetWeakPtr(),
+                                creative_instance_id, mojom_ad_type,
+                                mojom_confirmation_type, std::move(user_data)));
 }
 
-void Account::ProcessDepositCallback(const std::string& creative_instance_id,
-                                     const AdType ad_type,
-                                     const ConfirmationType confirmation_type,
-                                     base::Value::Dict user_data,
-                                     const bool success,
-                                     const TransactionInfo& transaction) const {
+void Account::ProcessDepositCallback(
+    const std::string& creative_instance_id,
+    const mojom::AdType mojom_ad_type,
+    const mojom::ConfirmationType mojom_confirmation_type,
+    base::Value::Dict user_data,
+    const bool success,
+    const TransactionInfo& transaction) const {
   if (!success) {
-    return FailedToProcessDeposit(creative_instance_id, ad_type,
-                                  confirmation_type);
+    return FailedToProcessDeposit(creative_instance_id, mojom_ad_type,
+                                  mojom_confirmation_type);
   }
 
   SuccessfullyProcessedDeposit(transaction, std::move(user_data));
@@ -189,25 +188,14 @@ void Account::SuccessfullyProcessedDeposit(const TransactionInfo& transaction,
 
 void Account::FailedToProcessDeposit(
     const std::string& creative_instance_id,
-    const AdType ad_type,
-    const ConfirmationType confirmation_type) const {
-  // TODO(https://github.com/brave/brave-browser/issues/32066):
-  // Detect potential defects using `DumpWithoutCrashing`.
-  SCOPED_CRASH_KEY_STRING64("Issue32066", "ad_type", ToString(ad_type));
-  SCOPED_CRASH_KEY_STRING64("Issue32066", "confirmation_type",
-                            ToString(confirmation_type));
-  SCOPED_CRASH_KEY_STRING64("Issue32066", "creative_instance_id",
-                            creative_instance_id);
-  SCOPED_CRASH_KEY_STRING64("Issue32066", "failure_reason",
-                            "Failed to process deposit");
-  base::debug::DumpWithoutCrashing();
-
+    const mojom::AdType mojom_ad_type,
+    const mojom::ConfirmationType mojom_confirmation_type) const {
   BLOG(0, "Failed to process deposit for "
-              << ad_type << " with creative instance id "
-              << creative_instance_id << " and " << confirmation_type);
+              << mojom_ad_type << " with creative instance id "
+              << creative_instance_id << " and " << mojom_confirmation_type);
 
-  NotifyFailedToProcessDeposit(creative_instance_id, ad_type,
-                               confirmation_type);
+  NotifyFailedToProcessDeposit(creative_instance_id, mojom_ad_type,
+                               mojom_confirmation_type);
 }
 
 void Account::Initialize() {
@@ -273,11 +261,11 @@ void Account::NotifyDidProcessDeposit(
 
 void Account::NotifyFailedToProcessDeposit(
     const std::string& creative_instance_id,
-    const AdType ad_type,
-    const ConfirmationType confirmation_type) const {
+    const mojom::AdType mojom_ad_type,
+    const mojom::ConfirmationType mojom_confirmation_type) const {
   for (AccountObserver& observer : observers_) {
-    observer.OnFailedToProcessDeposit(creative_instance_id, ad_type,
-                                      confirmation_type);
+    observer.OnFailedToProcessDeposit(creative_instance_id, mojom_ad_type,
+                                      mojom_confirmation_type);
   }
 }
 
@@ -291,9 +279,10 @@ void Account::OnNotifyPrefDidChange(const std::string& path) {
   }
 }
 
-void Account::OnNotifyRewardsWalletDidUpdate(const std::string& payment_id,
-                                             const std::string& recovery_seed) {
-  SetWallet(payment_id, recovery_seed);
+void Account::OnNotifyRewardsWalletDidUpdate(
+    const std::string& payment_id,
+    const std::string& recovery_seed_base64) {
+  SetWallet(payment_id, recovery_seed_base64);
 
   Initialize();
 }

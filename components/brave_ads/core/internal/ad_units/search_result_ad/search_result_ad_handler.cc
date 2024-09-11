@@ -17,9 +17,7 @@
 #include "brave/components/brave_ads/core/internal/history/ad_history_manager.h"
 #include "brave/components/brave_ads/core/internal/settings/settings.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/site_visit/site_visit.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-forward.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"  // IWYU pragma: keep
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "brave/components/brave_ads/core/public/ads_callback.h"
 
 namespace brave_ads {
@@ -29,10 +27,11 @@ namespace {
 SearchResultAdHandler* g_search_result_ad_handler_for_testing = nullptr;
 bool g_defer_triggering_of_ad_viewed_event_for_testing = false;
 
-void FireEventCallback(TriggerAdEventCallback callback,
-                       const bool success,
-                       const std::string& /*placement_id*/,
-                       const mojom::SearchResultAdEventType /*event_type*/) {
+void FireEventCallback(
+    TriggerAdEventCallback callback,
+    const bool success,
+    const std::string& /*placement_id*/,
+    const mojom::SearchResultAdEventType /*mojom_ad_event_type*/) {
   std::move(callback).Run(success);
 }
 
@@ -73,9 +72,10 @@ void SearchResultAdHandler::TriggerDeferredAdViewedEventForTesting() {
 
 void SearchResultAdHandler::TriggerEvent(
     mojom::CreativeSearchResultAdInfoPtr mojom_creative_ad,
-    const mojom::SearchResultAdEventType event_type,
+    const mojom::SearchResultAdEventType mojom_ad_event_type,
     TriggerAdEventCallback callback) {
-  CHECK_NE(mojom::SearchResultAdEventType::kServedImpression, event_type)
+  CHECK_NE(mojom::SearchResultAdEventType::kServedImpression,
+           mojom_ad_event_type)
       << "Should not be called with kServedImpression as this event is handled "
          "when calling TriggerEvent with kViewedImpression";
 
@@ -84,7 +84,8 @@ void SearchResultAdHandler::TriggerEvent(
     return std::move(callback).Run(/*success=*/false);
   }
 
-  if (event_type == mojom::SearchResultAdEventType::kViewedImpression) {
+  if (mojom_ad_event_type ==
+      mojom::SearchResultAdEventType::kViewedImpression) {
     mojom::CreativeSearchResultAdInfoPtr mojom_creative_ad_copy =
         mojom_creative_ad.Clone();
 
@@ -97,7 +98,7 @@ void SearchResultAdHandler::TriggerEvent(
   }
 
   event_handler_.FireEvent(
-      std::move(mojom_creative_ad), event_type,
+      std::move(mojom_creative_ad), mojom_ad_event_type,
       base::BindOnce(&FireEventCallback, std::move(callback)));
 }
 
@@ -108,7 +109,7 @@ void SearchResultAdHandler::FireServedEventCallback(
     TriggerAdEventCallback callback,
     const bool success,
     const std::string& /*placement_id*/,
-    const mojom::SearchResultAdEventType /*event_type*/) {
+    const mojom::SearchResultAdEventType /*mojom_ad_event_type*/) {
   if (!success) {
     return std::move(callback).Run(/*success=*/false);
   }
@@ -143,8 +144,9 @@ void SearchResultAdHandler::FireAdViewedEventCallback(
     TriggerAdEventCallback callback,
     const bool success,
     const std::string& /*placement_id*/,
-    const mojom::SearchResultAdEventType event_type) {
-  CHECK_EQ(event_type, mojom::SearchResultAdEventType::kViewedImpression);
+    const mojom::SearchResultAdEventType mojom_ad_event_type) {
+  CHECK_EQ(mojom_ad_event_type,
+           mojom::SearchResultAdEventType::kViewedImpression);
 
   if (g_defer_triggering_of_ad_viewed_event_for_testing) {
     CHECK_IS_TEST();
@@ -172,10 +174,11 @@ void SearchResultAdHandler::OnDidFireSearchResultAdViewedEvent(
               << ad.placement_id << " and creative instance id "
               << ad.creative_instance_id);
 
-  AdHistoryManager::GetInstance().Add(ad, ConfirmationType::kViewedImpression);
+  AdHistoryManager::GetInstance().Add(
+      ad, mojom::ConfirmationType::kViewedImpression);
 
   GetAccount().Deposit(ad.creative_instance_id, ad.segment, ad.type,
-                       ConfirmationType::kViewedImpression);
+                       mojom::ConfirmationType::kViewedImpression);
 }
 
 void SearchResultAdHandler::OnDidFireSearchResultAdClickedEvent(
@@ -186,10 +189,10 @@ void SearchResultAdHandler::OnDidFireSearchResultAdClickedEvent(
 
   site_visit_->SetLastClickedAd(ad);
 
-  AdHistoryManager::GetInstance().Add(ad, ConfirmationType::kClicked);
+  AdHistoryManager::GetInstance().Add(ad, mojom::ConfirmationType::kClicked);
 
   GetAccount().Deposit(ad.creative_instance_id, ad.segment, ad.type,
-                       ConfirmationType::kClicked);
+                       mojom::ConfirmationType::kClicked);
 }
 
 }  // namespace brave_ads

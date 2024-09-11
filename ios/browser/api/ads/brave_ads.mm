@@ -37,8 +37,6 @@
 #include "brave/components/brave_ads/core/public/ads_util.h"
 #include "brave/components/brave_ads/core/public/database/database.h"
 #include "brave/components/brave_ads/core/public/flags/flags_util.h"
-#include "brave/components/brave_ads/core/public/history/ad_history_item_info.h"
-#include "brave/components/brave_ads/core/public/history/ad_history_value_util.h"
 #include "brave/components/brave_ads/core/public/prefs/pref_names.h"
 #include "brave/components/brave_ads/core/public/user_engagement/ad_events/ad_event_cache.h"
 #include "brave/components/brave_news/common/pref_names.h"
@@ -298,8 +296,6 @@ constexpr NSString* kComponentUpdaterMetadataPrefKey =
   if ([self isServiceRunning]) {
     dispatch_group_notify(
         self.componentUpdaterPrefsWriteGroup, dispatch_get_main_queue(), ^{
-          // TODO(https://github.com/brave/brave-browser/issues/32917):
-          // Deprecate shutdown API call.
           self->ads->Shutdown(base::BindOnce(^(bool) {
             [self cleanupAds];
 
@@ -400,7 +396,7 @@ constexpr NSString* kComponentUpdaterMetadataPrefKey =
 #pragma mark - Profile prefs
 
 - (void)initProfilePrefService {
-  ios::ChromeBrowserStateManager* browserStateManager =
+  ChromeBrowserStateManager* browserStateManager =
       GetApplicationContext()->GetChromeBrowserStateManager();
   CHECK(browserStateManager);
 
@@ -1294,22 +1290,25 @@ constexpr NSString* kComponentUpdaterMetadataPrefKey =
 }
 
 - (void)cacheAdEventForInstanceId:(const std::string&)id
-                           adType:(const std::string&)ad_type
-                 confirmationType:(const std::string&)confirmation_type
+                           adType:(const brave_ads::mojom::AdType)mojom_ad_type
+                 confirmationType:(const brave_ads::mojom::ConfirmationType)
+                                      mojom_confirmation_type
                              time:(const base::Time)time {
   if (adEventCache) {
-    adEventCache->AddEntryForInstanceId(id, ad_type, confirmation_type, time);
+    adEventCache->AddEntryForInstanceId(id, mojom_ad_type,
+                                        mojom_confirmation_type, time);
   }
 }
 
-- (std::vector<base::Time>)getCachedAdEvents:(const std::string&)ad_type
-                            confirmationType:
-                                (const std::string&)confirmation_type {
+- (std::vector<base::Time>)
+    getCachedAdEvents:(const brave_ads::mojom::AdType)mojom_ad_type
+     confirmationType:
+         (const brave_ads::mojom::ConfirmationType)mojom_confirmation_type {
   if (!adEventCache) {
     return {};
   }
 
-  return adEventCache->Get(ad_type, confirmation_type);
+  return adEventCache->Get(mojom_ad_type, mojom_confirmation_type);
 }
 
 - (void)resetAdEventCacheForInstanceId:(const std::string&)id {
@@ -1352,13 +1351,13 @@ constexpr NSString* kComponentUpdaterMetadataPrefKey =
                 return;
               }
 
-              brave_ads::mojom::UrlResponseInfo url_response;
-              url_response.url = copiedURL;
-              url_response.status_code = statusCode;
-              url_response.body = response;
-              url_response.headers = headers;
+              brave_ads::mojom::UrlResponseInfo mojom_url_response;
+              mojom_url_response.url = copiedURL;
+              mojom_url_response.status_code = statusCode;
+              mojom_url_response.body = response;
+              mojom_url_response.headers = headers;
               if (cb) {
-                std::move(*cb).Run(url_response);
+                std::move(*cb).Run(mojom_url_response);
               }
             }];
 }
@@ -1509,20 +1508,20 @@ constexpr NSString* kComponentUpdaterMetadataPrefKey =
   }
 
   ads->GetStatementOfAccounts(
-      base::BindOnce(^(brave_ads::mojom::StatementInfoPtr statement) {
-        if (!statement) {
+      base::BindOnce(^(brave_ads::mojom::StatementInfoPtr mojom_statement) {
+        if (!mojom_statement) {
           completion(0, 0, nil);
           return;
         }
 
         NSDate* nextPaymentDate = nil;
-        if (!statement->next_payment_date.is_null()) {
+        if (!mojom_statement->next_payment_date.is_null()) {
           nextPaymentDate = [NSDate
-              dateWithTimeIntervalSince1970:statement->next_payment_date
+              dateWithTimeIntervalSince1970:mojom_statement->next_payment_date
                                                 .InSecondsFSinceUnixEpoch()];
         }
-        completion(statement->ads_received_this_month,
-                   statement->max_earnings_this_month, nextPaymentDate);
+        completion(mojom_statement->ads_received_this_month,
+                   mojom_statement->max_earnings_this_month, nextPaymentDate);
       }));
 }
 
@@ -1650,42 +1649,6 @@ constexpr NSString* kComponentUpdaterMetadataPrefKey =
       base::BindOnce(completion));
 }
 
-- (void)toggleLikeAd:(NSString*)creativeInstanceId
-        advertiserId:(NSString*)advertiserId
-             segment:(NSString*)segment {
-  if (![self isServiceRunning]) {
-    return;
-  }
-
-  brave_ads::AdHistoryItemInfo ad_history_item;
-  ad_history_item.type = brave_ads::AdType::kNotificationAd;
-  ad_history_item.creative_instance_id =
-      base::SysNSStringToUTF8(creativeInstanceId);
-  ad_history_item.advertiser_id = base::SysNSStringToUTF8(advertiserId);
-  ad_history_item.segment = base::SysNSStringToUTF8(segment);
-
-  ads->ToggleLikeAd(brave_ads::AdHistoryItemToValue(ad_history_item),
-                    /*intentional*/ base::DoNothing());
-}
-
-- (void)toggleDislikeAd:(NSString*)creativeInstanceId
-           advertiserId:(NSString*)advertiserId
-                segment:(NSString*)segment {
-  if (![self isServiceRunning]) {
-    return;
-  }
-
-  brave_ads::AdHistoryItemInfo ad_history_item;
-  ad_history_item.type = brave_ads::AdType::kNotificationAd;
-  ad_history_item.creative_instance_id =
-      base::SysNSStringToUTF8(creativeInstanceId);
-  ad_history_item.advertiser_id = base::SysNSStringToUTF8(advertiserId);
-  ad_history_item.segment = base::SysNSStringToUTF8(segment);
-
-  ads->ToggleDislikeAd(brave_ads::AdHistoryItemToValue(ad_history_item),
-                       /*intentional*/ base::DoNothing());
-}
-
 - (void)clearData:(void (^)())completion {
   // Ensure the Brave Ads service is stopped before clearing data.
   CHECK(![self isServiceRunning]);
@@ -1709,18 +1672,6 @@ constexpr NSString* kComponentUpdaterMetadataPrefKey =
           std::move(storage_path)),
       base::BindOnce(completion));
 }
-
-// TODO(https://github.com/brave/brave-browser/issues/33788): Unify Brave Ads
-// like category.
-
-// TODO(https://github.com/brave/brave-browser/issues/33788): Unify Brave Ads
-// dislike category.
-
-// TODO(https://github.com/brave/brave-browser/issues/33789): Unify Brave Ads
-// save ad.
-
-// TODO(https://github.com/brave/brave-browser/issues/33790): Unify Brave Ads
-// mark ad as inappropriate.
 
 #pragma mark - Ads client notifier
 

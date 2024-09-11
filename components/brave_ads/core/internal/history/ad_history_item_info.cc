@@ -5,9 +5,6 @@
 
 #include "brave/components/brave_ads/core/public/history/ad_history_item_info.h"
 
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
-#include "brave/components/brave_ads/core/public/ad_units/ad_type.h"
-
 namespace brave_ads {
 
 AdHistoryItemInfo::AdHistoryItemInfo() = default;
@@ -26,13 +23,12 @@ AdHistoryItemInfo& AdHistoryItemInfo::operator=(
 AdHistoryItemInfo::~AdHistoryItemInfo() = default;
 
 bool AdHistoryItemInfo::IsValid() const {
-  // TODO(https://github.com/brave/brave-browser/issues/40241): Add more
-  // validation checks once we transation from `AdHistoryItemInfo` to
-  // `ReactionInfo` for reactions.
-  return type != AdType::kUndefined &&
-         confirmation_type != ConfirmationType::kUndefined &&
-         !creative_instance_id.empty() && !advertiser_id.empty() &&
-         !segment.empty();
+  return type != mojom::AdType::kUndefined &&
+         confirmation_type != mojom::ConfirmationType::kUndefined &&
+         !placement_id.empty() && !creative_instance_id.empty() &&
+         !creative_set_id.empty() && !campaign_id.empty() &&
+         !advertiser_id.empty() && !segment.empty() && !title.empty() &&
+         !description.empty() && target_url.is_valid();
 }
 
 }  // namespace brave_ads

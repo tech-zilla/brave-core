@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "base/check.h"
-#include "base/debug/dump_without_crashing.h"
 #include "base/strings/string_util.h"
 #include "brave/components/brave_ads/core/internal/ads_core/ads_core_util.h"
 #include "brave/components/brave_ads/core/internal/analytics/p2a/opportunities/p2a_opportunity.h"
@@ -21,7 +20,7 @@
 #include "brave/components/brave_ads/core/internal/targeting/geographical/subdivision/subdivision_targeting.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/ad_events.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/site_visit/site_visit.h"
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "brave/components/brave_ads/core/public/ad_units/inline_content_ad/inline_content_ad_info.h"
 
 namespace brave_ads {
@@ -34,7 +33,7 @@ void FireServedEventCallback(
     MaybeServeInlineContentAdCallback callback,
     const bool success,
     const std::string& /*placement_id*/,
-    const mojom::InlineContentAdEventType /*event_type*/) {
+    const mojom::InlineContentAdEventType /*mojom_ad_event_type*/) {
   if (!success) {
     return std::move(callback).Run(dimensions, /*ad=*/std::nullopt);
   }
@@ -42,10 +41,11 @@ void FireServedEventCallback(
   std::move(callback).Run(dimensions, ad);
 }
 
-void FireEventCallback(TriggerAdEventCallback callback,
-                       const bool success,
-                       const std::string& /*placement_id*/,
-                       const mojom::InlineContentAdEventType /*event_type*/) {
+void FireEventCallback(
+    TriggerAdEventCallback callback,
+    const bool success,
+    const std::string& /*placement_id*/,
+    const mojom::InlineContentAdEventType /*mojom_ad_event_type*/) {
   std::move(callback).Run(success);
 }
 
@@ -82,9 +82,10 @@ void InlineContentAdHandler::MaybeServe(
 void InlineContentAdHandler::TriggerEvent(
     const std::string& placement_id,
     const std::string& creative_instance_id,
-    const mojom::InlineContentAdEventType event_type,
+    const mojom::InlineContentAdEventType mojom_ad_event_type,
     TriggerAdEventCallback callback) {
-  CHECK_NE(mojom::InlineContentAdEventType::kServedImpression, event_type)
+  CHECK_NE(mojom::InlineContentAdEventType::kServedImpression,
+           mojom_ad_event_type)
       << "Should not be called with kServedImpression as this event is handled "
          "when calling MaybeServe";
 
@@ -99,7 +100,7 @@ void InlineContentAdHandler::TriggerEvent(
   }
 
   event_handler_.FireEvent(
-      placement_id, creative_instance_id, event_type,
+      placement_id, creative_instance_id, mojom_ad_event_type,
       base::BindOnce(&FireEventCallback, std::move(callback)));
 }
 
@@ -145,13 +146,6 @@ void InlineContentAdHandler::PurgeOrphanedCachedAdPlacements(
                 base::JoinString(placement_ids, ", ");
 
             if (!success) {
-              // TODO(https://github.com/brave/brave-browser/issues/32066):
-              // Detect potential defects using `DumpWithoutCrashing`.
-              SCOPED_CRASH_KEY_STRING64(
-                  "Issue32066", "failure_reason",
-                  "Failed to purge orphaned inline content ad events");
-              base::debug::DumpWithoutCrashing();
-
               return BLOG(
                   0, "Failed to purge orphaned inline content ad events for "
                          << joined_placement_ids << " placement ids");
@@ -168,7 +162,7 @@ void InlineContentAdHandler::PurgeOrphanedCachedAdPlacements(
 void InlineContentAdHandler::OnOpportunityAroseToServeInlineContentAd() {
   BLOG(1, "Opportunity arose to serve an inline content ad");
 
-  RecordP2AAdOpportunity(AdType::kInlineContentAd, /*segments=*/{});
+  RecordP2AAdOpportunity(mojom::AdType::kInlineContentAd, /*segments=*/{});
 }
 
 void InlineContentAdHandler::OnDidServeInlineContentAd(
@@ -204,10 +198,11 @@ void InlineContentAdHandler::OnDidFireInlineContentAdViewedEvent(
               << ad.placement_id << " and creative instance id "
               << ad.creative_instance_id);
 
-  AdHistoryManager::GetInstance().Add(ad, ConfirmationType::kViewedImpression);
+  AdHistoryManager::GetInstance().Add(
+      ad, mojom::ConfirmationType::kViewedImpression);
 
   GetAccount().Deposit(ad.creative_instance_id, ad.segment, ad.type,
-                       ConfirmationType::kViewedImpression);
+                       mojom::ConfirmationType::kViewedImpression);
 }
 
 void InlineContentAdHandler::OnDidFireInlineContentAdClickedEvent(
@@ -218,10 +213,10 @@ void InlineContentAdHandler::OnDidFireInlineContentAdClickedEvent(
 
   site_visit_->SetLastClickedAd(ad);
 
-  AdHistoryManager::GetInstance().Add(ad, ConfirmationType::kClicked);
+  AdHistoryManager::GetInstance().Add(ad, mojom::ConfirmationType::kClicked);
 
   GetAccount().Deposit(ad.creative_instance_id, ad.segment, ad.type,
-                       ConfirmationType::kClicked);
+                       mojom::ConfirmationType::kClicked);
 }
 
 void InlineContentAdHandler::OnTabDidChange(const TabInfo& tab) {

@@ -15,7 +15,6 @@
 #include "brave/components/brave_ads/core/internal/account/tokens/token_generator_interface.h"
 #include "brave/components/brave_ads/core/internal/global_state/global_state.h"
 #include "brave/components/brave_ads/core/mojom/brave_ads.mojom-forward.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-shared.h"
 #include "brave/components/brave_ads/core/public/ads.h"
 #include "brave/components/brave_ads/core/public/ads_callback.h"
 
@@ -45,14 +44,13 @@ class AdsImpl final : public Ads {
   ~AdsImpl() override;
 
   // Ads:
-  void AddBatAdsObserver(
-      std::unique_ptr<AdsObserverInterface> observer) override;
+  void AddObserver(std::unique_ptr<AdsObserverInterface> observer) override;
 
-  void SetSysInfo(mojom::SysInfoPtr sys_info) override;
-  void SetBuildChannel(mojom::BuildChannelInfoPtr build_channel) override;
-  void SetFlags(mojom::FlagsPtr flags) override;
+  void SetSysInfo(mojom::SysInfoPtr mojom_sys_info) override;
+  void SetBuildChannel(mojom::BuildChannelInfoPtr mojom_build_channel) override;
+  void SetFlags(mojom::FlagsPtr mojom_flags) override;
 
-  void Initialize(mojom::WalletInfoPtr wallet,
+  void Initialize(mojom::WalletInfoPtr mojom_wallet,
                   InitializeCallback callback) override;
   void Shutdown(ShutdownCallback callback) override;
 
@@ -63,80 +61,79 @@ class AdsImpl final : public Ads {
   void MaybeServeInlineContentAd(
       const std::string& dimensions,
       MaybeServeInlineContentAdCallback callback) override;
-  void TriggerInlineContentAdEvent(const std::string& placement_id,
-                                   const std::string& creative_instance_id,
-                                   mojom::InlineContentAdEventType event_type,
-                                   TriggerAdEventCallback callback) override;
+  void TriggerInlineContentAdEvent(
+      const std::string& placement_id,
+      const std::string& creative_instance_id,
+      mojom::InlineContentAdEventType mojom_ad_event_type,
+      TriggerAdEventCallback callback) override;
 
   void MaybeServeNewTabPageAd(MaybeServeNewTabPageAdCallback callback) override;
-  void TriggerNewTabPageAdEvent(const std::string& placement_id,
-                                const std::string& creative_instance_id,
-                                mojom::NewTabPageAdEventType event_type,
-                                TriggerAdEventCallback callback) override;
+  void TriggerNewTabPageAdEvent(
+      const std::string& placement_id,
+      const std::string& creative_instance_id,
+      mojom::NewTabPageAdEventType mojom_ad_event_type,
+      TriggerAdEventCallback callback) override;
 
   std::optional<NotificationAdInfo> MaybeGetNotificationAd(
       const std::string& placement_id) override;
-  void TriggerNotificationAdEvent(const std::string& placement_id,
-                                  mojom::NotificationAdEventType event_type,
-                                  TriggerAdEventCallback callback) override;
+  void TriggerNotificationAdEvent(
+      const std::string& placement_id,
+      mojom::NotificationAdEventType mojom_ad_event_type,
+      TriggerAdEventCallback callback) override;
 
   void TriggerPromotedContentAdEvent(
       const std::string& placement_id,
       const std::string& creative_instance_id,
-      mojom::PromotedContentAdEventType event_type,
+      mojom::PromotedContentAdEventType mojom_ad_event_type,
       TriggerAdEventCallback callback) override;
 
   void TriggerSearchResultAdEvent(
       mojom::CreativeSearchResultAdInfoPtr mojom_creative_ad,
-      mojom::SearchResultAdEventType event_type,
+      mojom::SearchResultAdEventType mojom_ad_event_type,
       TriggerAdEventCallback callback) override;
 
   void PurgeOrphanedAdEventsForType(
-      mojom::AdType ad_type,
+      mojom::AdType mojom_ad_type,
       PurgeOrphanedAdEventsForTypeCallback callback) override;
 
   void GetAdHistory(base::Time from_time,
                     base::Time to_time,
                     GetAdHistoryForUICallback callback) override;
 
-  void ToggleLikeAd(const base::Value::Dict& value,
+  void ToggleLikeAd(mojom::ReactionInfoPtr mojom_reaction,
                     ToggleReactionCallback callback) override;
-  void ToggleDislikeAd(const base::Value::Dict& value,
+  void ToggleDislikeAd(mojom::ReactionInfoPtr mojom_reaction,
                        ToggleReactionCallback callback) override;
-  void ToggleLikeSegment(const base::Value::Dict& value,
+  void ToggleLikeSegment(mojom::ReactionInfoPtr mojom_reaction,
                          ToggleReactionCallback callback) override;
-  void ToggleDislikeSegment(const base::Value::Dict& value,
+  void ToggleDislikeSegment(mojom::ReactionInfoPtr mojom_reaction,
                             ToggleReactionCallback callback) override;
-  void ToggleSaveAd(const base::Value::Dict& value,
+  void ToggleSaveAd(mojom::ReactionInfoPtr mojom_reaction,
                     ToggleReactionCallback callback) override;
-  void ToggleMarkAdAsInappropriate(const base::Value::Dict& value,
+  void ToggleMarkAdAsInappropriate(mojom::ReactionInfoPtr mojom_reaction,
                                    ToggleReactionCallback callback) override;
 
  private:
-  void CreateOrOpenDatabase(mojom::WalletInfoPtr wallet,
+  void CreateOrOpenDatabase(mojom::WalletInfoPtr mojom_wallet,
                             InitializeCallback callback);
-  void CreateOrOpenDatabaseCallback(mojom::WalletInfoPtr wallet,
+  void CreateOrOpenDatabaseCallback(mojom::WalletInfoPtr mojom_wallet,
                                     InitializeCallback callback,
                                     bool success);
-  void SuccessfullyInitialized(mojom::WalletInfoPtr wallet,
+  void SuccessfullyInitialized(mojom::WalletInfoPtr mojom_wallet,
                                InitializeCallback callback);
-
-  void PurgeAllOrphanedAdEventsCallback(mojom::WalletInfoPtr wallet,
-                                        InitializeCallback callback,
-                                        bool success);
 
   // TODO(https://github.com/brave/brave-browser/issues/39795): Transition away
   // from using JSON state to a more efficient data approach.
-  void MigrateClientStateCallback(mojom::WalletInfoPtr wallet,
+  void MigrateClientStateCallback(mojom::WalletInfoPtr mojom_wallet,
                                   InitializeCallback callback,
                                   bool success);
-  void LoadClientStateCallback(mojom::WalletInfoPtr wallet,
+  void LoadClientStateCallback(mojom::WalletInfoPtr mojom_wallet,
                                InitializeCallback callback,
                                bool success);
-  void MigrateConfirmationStateCallback(mojom::WalletInfoPtr wallet,
+  void MigrateConfirmationStateCallback(mojom::WalletInfoPtr mojom_wallet,
                                         InitializeCallback callback,
                                         bool success);
-  void LoadConfirmationStateCallback(mojom::WalletInfoPtr wallet,
+  void LoadConfirmationStateCallback(mojom::WalletInfoPtr mojom_wallet,
                                      InitializeCallback callback,
                                      bool success);
 
@@ -146,7 +143,7 @@ class AdsImpl final : public Ads {
   // state.
   GlobalState global_state_;
 
-  // Handles database maintenance tasks, such as purging and vacuuming.
+  // Handles database maintenance tasks, such as purging.
   std::unique_ptr<database::Maintenance> database_maintenance_;
 
   base::WeakPtrFactory<AdsImpl> weak_factory_{this};

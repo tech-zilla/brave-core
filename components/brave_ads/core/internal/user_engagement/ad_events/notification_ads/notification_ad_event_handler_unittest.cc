@@ -13,7 +13,7 @@
 #include "brave/components/brave_ads/core/internal/creatives/notification_ads/notification_ad_builder.h"
 #include "brave/components/brave_ads/core/internal/creatives/notification_ads/notification_ad_manager.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/notification_ads/notification_ad_event_handler_delegate_mock.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-shared.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "brave/components/brave_ads/core/public/ad_units/notification_ad/notification_ad_info.h"
 
 // npm run test -- brave_unit_tests --filter=BraveAds*
@@ -42,12 +42,12 @@ class BraveAdsNotificationAdEventHandlerTest : public test::TestBase {
 
   void FireEventAndVerifyExpectations(
       const std::string& placement_id,
-      const mojom::NotificationAdEventType event_type,
+      const mojom::NotificationAdEventType mojom_ad_event_type,
       const bool should_fire_event) {
     base::MockCallback<FireNotificationAdEventHandlerCallback> callback;
-    EXPECT_CALL(callback,
-                Run(/*success=*/should_fire_event, placement_id, event_type));
-    event_handler_.FireEvent(placement_id, event_type, callback.Get());
+    EXPECT_CALL(callback, Run(/*success=*/should_fire_event, placement_id,
+                              mojom_ad_event_type));
+    event_handler_.FireEvent(placement_id, mojom_ad_event_type, callback.Get());
   }
 
   NotificationAdEventHandler event_handler_;

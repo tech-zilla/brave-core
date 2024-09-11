@@ -14,7 +14,6 @@
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/search_result_ads/search_result_ad_event_handler.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/search_result_ads/search_result_ad_event_handler_delegate.h"
 #include "brave/components/brave_ads/core/mojom/brave_ads.mojom-forward.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-shared.h"
 #include "brave/components/brave_ads/core/public/ads_callback.h"
 
 namespace brave_ads {
@@ -40,7 +39,7 @@ class SearchResultAdHandler final : public SearchResultAdEventHandlerDelegate {
   static void TriggerDeferredAdViewedEventForTesting();
 
   void TriggerEvent(mojom::CreativeSearchResultAdInfoPtr mojom_creative_ad,
-                    mojom::SearchResultAdEventType event_type,
+                    mojom::SearchResultAdEventType mojom_ad_event_type,
                     TriggerAdEventCallback callback);
 
  private:
@@ -49,13 +48,14 @@ class SearchResultAdHandler final : public SearchResultAdEventHandlerDelegate {
       TriggerAdEventCallback callback,
       bool success,
       const std::string& placement_id,
-      mojom::SearchResultAdEventType event_type);
+      mojom::SearchResultAdEventType mojom_ad_event_type);
 
   void MaybeTriggerDeferredAdViewedEvent(TriggerAdEventCallback callback);
-  void FireAdViewedEventCallback(TriggerAdEventCallback callback,
-                                 bool success,
-                                 const std::string& placement_id,
-                                 mojom::SearchResultAdEventType event_type);
+  void FireAdViewedEventCallback(
+      TriggerAdEventCallback callback,
+      bool success,
+      const std::string& placement_id,
+      mojom::SearchResultAdEventType mojom_ad_event_type);
 
   // SearchResultAdEventHandlerDelegate:
   void OnDidFireSearchResultAdServedEvent(

@@ -788,6 +788,8 @@ enum KeyringId {
   kZCashTestnet = 7,
   kBitcoinImport = 8,
   kBitcoinImportTestnet = 9,
+  kBitcoinHardware = 10,
+  kBitcoinHardwareTestnet = 11,
 };
 
 const string kP3ACountTestNetworksSwitch = "p3a-count-wallet-test-networks";
@@ -805,12 +807,11 @@ enum HardwareVendor {
 };
 
 struct HardwareWalletAccount {
-  string address;
+  string address; // Account's address or account's xpub for BTC.
   string derivation_path;
   string name;
   HardwareVendor hardware_vendor;
   string device_id;
-  CoinType coin;
   KeyringId keyring_id;
 };
 
@@ -1063,6 +1064,9 @@ interface KeyringService {
 
   // Adds hardware accounts
   AddHardwareAccounts(array<HardwareWalletAccount> info) => (array<AccountInfo>? account_infos);
+
+  // Adds BTC hardware account
+  AddBitcoinHardwareAccount(HardwareWalletAccount info) => (bool success);
 
   // Removes imported or hardware account
   RemoveAccount(AccountId account_id, string password) => (bool success);
@@ -2616,7 +2620,9 @@ struct SolanaTxData {
   uint64 last_valid_block_height;
   string fee_payer;
   string to_wallet_address;
-  string spl_token_mint_address;
+  // token_address can be either a SPL mint address or an
+  // address of a compressed NFT.
+  string token_address;
   uint64 lamports;
   uint64 amount;
   TransactionType tx_type;

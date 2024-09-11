@@ -164,7 +164,7 @@ import org.chromium.chrome.browser.set_default_browser.OnBraveSetDefaultBrowserL
 import org.chromium.chrome.browser.settings.BraveNewsPreferencesV2;
 import org.chromium.chrome.browser.settings.BraveSearchEngineUtils;
 import org.chromium.chrome.browser.settings.BraveWalletPreferences;
-import org.chromium.chrome.browser.settings.SettingsLauncherImpl;
+import org.chromium.chrome.browser.settings.SettingsLauncherFactory;
 import org.chromium.chrome.browser.settings.developer.BraveQAPreferences;
 import org.chromium.chrome.browser.share.ShareDelegate;
 import org.chromium.chrome.browser.share.ShareDelegate.ShareOrigin;
@@ -174,6 +174,7 @@ import org.chromium.chrome.browser.speedreader.BraveSpeedReaderUtils;
 import org.chromium.chrome.browser.tab.Tab;
 import org.chromium.chrome.browser.tab.TabLaunchType;
 import org.chromium.chrome.browser.tab.TabSelectionType;
+import org.chromium.chrome.browser.tabmodel.TabClosureParams;
 import org.chromium.chrome.browser.tabmodel.TabList;
 import org.chromium.chrome.browser.tabmodel.TabModel;
 import org.chromium.chrome.browser.tabmodel.TabModelUtils;
@@ -195,7 +196,6 @@ import org.chromium.chrome.browser.vpn.BraveVpnNativeWorker;
 import org.chromium.chrome.browser.vpn.BraveVpnObserver;
 import org.chromium.chrome.browser.vpn.activities.BraveVpnProfileActivity;
 import org.chromium.chrome.browser.vpn.fragments.LinkVpnSubscriptionDialogFragment;
-import org.chromium.chrome.browser.vpn.models.BraveVpnServerRegion;
 import org.chromium.chrome.browser.vpn.timer.TimerDialogFragment;
 import org.chromium.chrome.browser.vpn.utils.BraveVpnApiResponseUtils;
 import org.chromium.chrome.browser.vpn.utils.BraveVpnPrefUtils;
@@ -1160,11 +1160,6 @@ public abstract class BraveActivity extends ChromeActivity
 
         checkFingerPrintingOnUpgrade(isFirstInstall);
         checkForVpnCallout(isFirstInstall);
-        if (!isFirstInstall
-                && !BraveVpnPrefUtils.isIsoCodeUpgradeDone()
-                && BraveVpnPrefUtils.isSubscriptionPurchase()) {
-            BraveVpnNativeWorker.getInstance().getAllServerRegions();
-        }
 
         if (ChromeFeatureList.isEnabled(BraveFeatureList.BRAVE_VPN_LINK_SUBSCRIPTION_ANDROID_UI)
                 && BraveVpnPrefUtils.isSubscriptionPurchase()
@@ -1342,22 +1337,6 @@ public abstract class BraveActivity extends ChromeActivity
             setInAppUpdateTiming();
         } catch (IntentSender.SendIntentException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void onGetAllServerRegions(String jsonResponse, boolean isSuccess) {
-        if (isSuccess) {
-            List<BraveVpnServerRegion> braveVpnServerRegions =
-                    BraveVpnUtils.getServerLocations(jsonResponse);
-            for (BraveVpnServerRegion braveVpnServerRegion : braveVpnServerRegions) {
-                if (braveVpnServerRegion.getName().equals(BraveVpnPrefUtils.getServerRegion())) {
-                    BraveVpnPrefUtils.setServerIsoCode(braveVpnServerRegion.getCountryIsoCode());
-                    BraveVpnPrefUtils.setServerNamePretty(braveVpnServerRegion.getNamePretty());
-                    BraveVpnPrefUtils.setIsoCodeUpgrade(true);
-                    break;
-                }
-            }
         }
     }
 
@@ -1553,27 +1532,27 @@ public abstract class BraveActivity extends ChromeActivity
     }
 
     public void openBravePlaylistSettings() {
-        SettingsLauncher settingsLauncher = new SettingsLauncherImpl();
+        SettingsLauncher settingsLauncher = SettingsLauncherFactory.createSettingsLauncher();
         settingsLauncher.launchSettingsActivity(this, BravePlaylistPreferences.class);
     }
 
     public void openBraveNewsSettings() {
-        SettingsLauncher settingsLauncher = new SettingsLauncherImpl();
+        SettingsLauncher settingsLauncher = SettingsLauncherFactory.createSettingsLauncher();
         settingsLauncher.launchSettingsActivity(this, BraveNewsPreferencesV2.class);
     }
 
     public void openBraveContentFilteringSettings() {
-        SettingsLauncher settingsLauncher = new SettingsLauncherImpl();
+        SettingsLauncher settingsLauncher = SettingsLauncherFactory.createSettingsLauncher();
         settingsLauncher.launchSettingsActivity(this, ContentFilteringFragment.class);
     }
 
     public void openBraveWalletSettings() {
-        SettingsLauncher settingsLauncher = new SettingsLauncherImpl();
+        SettingsLauncher settingsLauncher = SettingsLauncherFactory.createSettingsLauncher();
         settingsLauncher.launchSettingsActivity(this, BraveWalletPreferences.class);
     }
 
     public void openBraveConnectedSitesSettings() {
-        SettingsLauncher settingsLauncher = new SettingsLauncherImpl();
+        SettingsLauncher settingsLauncher = SettingsLauncherFactory.createSettingsLauncher();
         settingsLauncher.launchSettingsActivity(this, BraveWalletEthereumConnectedSites.class);
     }
 
@@ -1799,7 +1778,7 @@ public abstract class BraveActivity extends ChromeActivity
             Tab tab = tabModel.getTabAt(index);
             if (tab != null) {
                 tab.setClosing(true);
-                tabModel.closeTab(tab);
+                tabModel.closeTabs(TabClosureParams.closeTab(tab).build());
             }
         }
     }

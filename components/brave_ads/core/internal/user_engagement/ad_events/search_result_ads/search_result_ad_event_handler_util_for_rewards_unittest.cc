@@ -15,7 +15,6 @@
 #include "brave/components/brave_ads/core/internal/creatives/search_result_ads/creative_search_result_ad_test_util.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/ad_event_builder.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/search_result_ads/search_result_ad_event_handler_util.h"
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
 #include "brave/components/brave_ads/core/public/ad_units/search_result_ad/search_result_ad_test_util.h"
 #include "brave/components/brave_ads/core/public/ads_feature.h"
 
@@ -72,9 +71,12 @@ TEST_F(BraveAdsSearchResultAdEventHandlerUtilForRewardsTest,
   // Act
   for (int i = 0;
        i < static_cast<int>(mojom::SearchResultAdEventType::kMaxValue); ++i) {
-    const auto event_type = static_cast<mojom::SearchResultAdEventType>(i);
-    if (event_type != mojom::SearchResultAdEventType::kViewedImpression) {
-      MaybeBuildAndSaveCreativeSetConversion(mojom_creative_ad, event_type);
+    const auto mojom_ad_event_type =
+        static_cast<mojom::SearchResultAdEventType>(i);
+    if (mojom_ad_event_type !=
+        mojom::SearchResultAdEventType::kViewedImpression) {
+      MaybeBuildAndSaveCreativeSetConversion(mojom_creative_ad,
+                                             mojom_ad_event_type);
     }
   }
 
@@ -112,8 +114,9 @@ TEST_F(BraveAdsSearchResultAdEventHandlerUtilForRewardsTest,
   // Act & Assert
   for (int i = 0;
        i < static_cast<int>(mojom::SearchResultAdEventType::kMaxValue); ++i) {
-    const auto event_type = static_cast<mojom::SearchResultAdEventType>(i);
-    EXPECT_TRUE(IsAllowedToFireAdEvent(mojom_creative_ad, event_type));
+    const auto mojom_ad_event_type =
+        static_cast<mojom::SearchResultAdEventType>(i);
+    EXPECT_TRUE(IsAllowedToFireAdEvent(mojom_creative_ad, mojom_ad_event_type));
   }
 }
 
@@ -127,8 +130,9 @@ TEST_F(BraveAdsSearchResultAdEventHandlerUtilForRewardsTest,
   // Act & Assert
   for (int i = 0;
        i < static_cast<int>(mojom::SearchResultAdEventType::kMaxValue); ++i) {
-    const auto event_type = static_cast<mojom::SearchResultAdEventType>(i);
-    EXPECT_TRUE(IsAllowedToFireAdEvent(mojom_creative_ad, event_type));
+    const auto mojom_ad_event_type =
+        static_cast<mojom::SearchResultAdEventType>(i);
+    EXPECT_TRUE(IsAllowedToFireAdEvent(mojom_creative_ad, mojom_ad_event_type));
   }
 }
 
@@ -141,8 +145,9 @@ TEST_F(BraveAdsSearchResultAdEventHandlerUtilForRewardsTest,
   const SearchResultAdInfo ad = FromMojomBuildSearchResultAd(mojom_creative_ad);
 
   AdEventList ad_events;
-  const AdEventInfo ad_event = BuildAdEvent(
-      ad, ConfirmationType::kServedImpression, /*created_at=*/test::Now());
+  const AdEventInfo ad_event =
+      BuildAdEvent(ad, mojom::ConfirmationType::kServedImpression,
+                   /*created_at=*/test::Now());
   ad_events.push_back(ad_event);
 
   // Act & Assert
@@ -172,8 +177,9 @@ TEST_F(BraveAdsSearchResultAdEventHandlerUtilForRewardsTest,
   const SearchResultAdInfo ad = FromMojomBuildSearchResultAd(mojom_creative_ad);
 
   AdEventList ad_events;
-  const AdEventInfo ad_event = BuildAdEvent(
-      ad, ConfirmationType::kServedImpression, /*created_at=*/test::Now());
+  const AdEventInfo ad_event =
+      BuildAdEvent(ad, mojom::ConfirmationType::kServedImpression,
+                   /*created_at=*/test::Now());
   ad_events.push_back(ad_event);
 
   // Act & Assert
@@ -190,11 +196,13 @@ TEST_F(BraveAdsSearchResultAdEventHandlerUtilForRewardsTest,
   const SearchResultAdInfo ad = FromMojomBuildSearchResultAd(mojom_creative_ad);
 
   AdEventList ad_events;
-  const AdEventInfo ad_event_1 = BuildAdEvent(
-      ad, ConfirmationType::kServedImpression, /*created_at=*/test::Now());
+  const AdEventInfo ad_event_1 =
+      BuildAdEvent(ad, mojom::ConfirmationType::kServedImpression,
+                   /*created_at=*/test::Now());
   ad_events.push_back(ad_event_1);
-  const AdEventInfo ad_event_2 = BuildAdEvent(
-      ad, ConfirmationType::kViewedImpression, /*created_at=*/test::Now());
+  const AdEventInfo ad_event_2 =
+      BuildAdEvent(ad, mojom::ConfirmationType::kViewedImpression,
+                   /*created_at=*/test::Now());
   ad_events.push_back(ad_event_2);
 
   // Act & Assert
@@ -211,8 +219,9 @@ TEST_F(BraveAdsSearchResultAdEventHandlerUtilForRewardsTest,
   const SearchResultAdInfo ad = FromMojomBuildSearchResultAd(mojom_creative_ad);
 
   AdEventList ad_events;
-  const AdEventInfo ad_event = BuildAdEvent(
-      ad, ConfirmationType::kServedImpression, /*created_at=*/test::Now());
+  const AdEventInfo ad_event =
+      BuildAdEvent(ad, mojom::ConfirmationType::kServedImpression,
+                   /*created_at=*/test::Now());
   ad_events.push_back(ad_event);
 
   // Act & Assert
@@ -229,11 +238,12 @@ TEST_F(BraveAdsSearchResultAdEventHandlerUtilForRewardsTest,
   const SearchResultAdInfo ad = FromMojomBuildSearchResultAd(mojom_creative_ad);
 
   AdEventList ad_events;
-  const AdEventInfo ad_event_1 = BuildAdEvent(
-      ad, ConfirmationType::kServedImpression, /*created_at=*/test::Now());
+  const AdEventInfo ad_event_1 =
+      BuildAdEvent(ad, mojom::ConfirmationType::kServedImpression,
+                   /*created_at=*/test::Now());
   ad_events.push_back(ad_event_1);
-  const AdEventInfo ad_event_2 =
-      BuildAdEvent(ad, ConfirmationType::kClicked, /*created_at=*/test::Now());
+  const AdEventInfo ad_event_2 = BuildAdEvent(
+      ad, mojom::ConfirmationType::kClicked, /*created_at=*/test::Now());
   ad_events.push_back(ad_event_2);
 
   // Act & Assert

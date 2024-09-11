@@ -8,9 +8,7 @@
 #include <string>
 
 #include "base/check.h"
-#include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
-#include "base/time/time.h"
 #include "brave/components/brave_ads/core/internal/ads_client/ads_client_util.h"
 #include "brave/components/brave_ads/core/internal/common/instance_id.h"
 #include "brave/components/brave_ads/core/internal/common/logging_util.h"
@@ -34,12 +32,6 @@ void RebuildAdEventCache() {
 
         for (const auto& ad_event : ad_events) {
           if (!ad_event.IsValid()) {
-            // TODO(https://github.com/brave/brave-browser/issues/32066): Detect
-            // potential defects using `DumpWithoutCrashing`.
-            SCOPED_CRASH_KEY_STRING64("Issue32066", "failure_reason",
-                                      "Invalid ad event");
-            base::debug::DumpWithoutCrashing();
-
             BLOG(0, "Invalid ad event");
 
             continue;
@@ -53,9 +45,9 @@ void RebuildAdEventCache() {
 void CacheAdEvent(const AdEventInfo& ad_event) {
   CHECK(ad_event.IsValid());
 
-  GetAdsClient()->CacheAdEventForInstanceId(
-      GetInstanceId(), ToString(ad_event.type),
-      ToString(ad_event.confirmation_type), *ad_event.created_at);
+  GetAdsClient()->CacheAdEventForInstanceId(GetInstanceId(), ad_event.type,
+                                            ad_event.confirmation_type,
+                                            *ad_event.created_at);
 }
 
 void ResetAdEventCache() {

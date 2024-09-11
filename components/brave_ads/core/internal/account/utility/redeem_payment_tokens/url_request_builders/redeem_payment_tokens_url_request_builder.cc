@@ -15,6 +15,7 @@
 #include "brave/components/brave_ads/core/internal/common/challenge_bypass_ristretto/credential_builder.h"
 #include "brave/components/brave_ads/core/internal/common/url/request_builder/host/url_host_util.h"
 #include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
+#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
 #include "url/gurl.h"
 
 namespace brave_ads {
@@ -42,15 +43,15 @@ RedeemPaymentTokensUrlRequestBuilder::~RedeemPaymentTokensUrlRequestBuilder() =
     default;
 
 mojom::UrlRequestInfoPtr RedeemPaymentTokensUrlRequestBuilder::Build() {
-  mojom::UrlRequestInfoPtr url_request = mojom::UrlRequestInfo::New();
-  url_request->url = BuildUrl();
-  url_request->headers = BuildHeaders();
+  mojom::UrlRequestInfoPtr mojom_url_request = mojom::UrlRequestInfo::New();
+  mojom_url_request->url = BuildUrl();
+  mojom_url_request->headers = BuildHeaders();
   const std::string payload = BuildPayload();
-  url_request->content = BuildBody(payload);
-  url_request->content_type = "application/json";
-  url_request->method = mojom::UrlRequestMethodType::kPut;
+  mojom_url_request->content = BuildBody(payload);
+  mojom_url_request->content_type = "application/json";
+  mojom_url_request->method = mojom::UrlRequestMethodType::kPut;
 
-  return url_request;
+  return mojom_url_request;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

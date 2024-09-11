@@ -8,7 +8,6 @@
 
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/ad_event_info.h"
 #include "brave/components/brave_ads/core/mojom/brave_ads.mojom-forward.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-shared.h"
 
 namespace brave_ads {
 
@@ -16,15 +15,15 @@ struct SearchResultAdInfo;
 
 void MaybeBuildAndSaveCreativeSetConversion(
     const mojom::CreativeSearchResultAdInfoPtr& mojom_creative_ad,
-    mojom::SearchResultAdEventType event_type);
+    mojom::SearchResultAdEventType mojom_ad_event_type);
 
 bool IsAllowedToFireAdEvent(
     const mojom::CreativeSearchResultAdInfoPtr& mojom_creative_ad,
-    mojom::SearchResultAdEventType event_type);
+    mojom::SearchResultAdEventType mojom_ad_event_type);
 
 bool ShouldFireAdEvent(const SearchResultAdInfo& ad,
                        const AdEventList& ad_events,
-                       mojom::SearchResultAdEventType event_type);
+                       mojom::SearchResultAdEventType mojom_ad_event_type);
 
 }  // namespace brave_ads
 

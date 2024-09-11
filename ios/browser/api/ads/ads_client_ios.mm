@@ -64,28 +64,31 @@ void AdsClientIOS::CloseNotificationAd(const std::string& placement_id) {
 
 void AdsClientIOS::CacheAdEventForInstanceId(
     const std::string& id,
-    const std::string& ad_type,
-    const std::string& confirmation_type,
+    const brave_ads::mojom::AdType mojom_ad_type,
+    const brave_ads::mojom::ConfirmationType mojom_confirmation_type,
     const base::Time time) const {
   [bridge_ cacheAdEventForInstanceId:id
-                              adType:ad_type
-                    confirmationType:confirmation_type
+                              adType:mojom_ad_type
+                    confirmationType:mojom_confirmation_type
                                 time:time];
 }
 
 std::vector<base::Time> AdsClientIOS::GetCachedAdEvents(
-    const std::string& ad_type,
-    const std::string& confirmation_type) const {
-  return [bridge_ getCachedAdEvents:ad_type confirmationType:confirmation_type];
+    const brave_ads::mojom::AdType mojom_ad_type,
+    const brave_ads::mojom::ConfirmationType mojom_confirmation_type) const {
+  return [bridge_ getCachedAdEvents:mojom_ad_type
+                   confirmationType:mojom_confirmation_type];
 }
 
 void AdsClientIOS::ResetAdEventCacheForInstanceId(const std::string& id) const {
   [bridge_ resetAdEventCacheForInstanceId:id];
 }
 
-void AdsClientIOS::UrlRequest(brave_ads::mojom::UrlRequestInfoPtr url_request,
-                              brave_ads::UrlRequestCallback callback) {
-  [bridge_ UrlRequest:std::move(url_request) callback:std::move(callback)];
+void AdsClientIOS::UrlRequest(
+    brave_ads::mojom::UrlRequestInfoPtr mojom_url_request,
+    brave_ads::UrlRequestCallback callback) {
+  [bridge_ UrlRequest:std::move(mojom_url_request)
+             callback:std::move(callback)];
 }
 
 void AdsClientIOS::Save(const std::string& name,

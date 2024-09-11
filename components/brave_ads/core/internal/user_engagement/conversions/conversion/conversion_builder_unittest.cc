@@ -14,9 +14,8 @@
 #include "brave/components/brave_ads/core/internal/user_engagement/conversions/conversion/conversion_info.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/conversions/types/verifiable_conversion/verifiable_conversion_info.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/conversions/types/verifiable_conversion/verifiable_conversion_test_constants.h"
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "brave/components/brave_ads/core/public/ad_units/ad_info.h"
-#include "brave/components/brave_ads/core/public/ad_units/ad_type.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -26,10 +25,10 @@ namespace brave_ads {
 
 TEST(BraveAdsConversionBuilderTest, BuildConversion) {
   // Arrange
-  const AdInfo ad = test::BuildAd(AdType::kNotificationAd,
+  const AdInfo ad = test::BuildAd(mojom::AdType::kNotificationAd,
                                   /*should_generate_random_uuids=*/false);
   const AdEventInfo ad_event =
-      BuildAdEvent(ad, ConfirmationType::kViewedImpression,
+      BuildAdEvent(ad, mojom::ConfirmationType::kViewedImpression,
                    /*created_at=*/test::Now());
 
   // Act
@@ -39,7 +38,7 @@ TEST(BraveAdsConversionBuilderTest, BuildConversion) {
   // Assert
   EXPECT_THAT(conversion,
               ::testing::FieldsAre(
-                  AdType::kNotificationAd, test::kCreativeInstanceId,
+                  mojom::AdType::kNotificationAd, test::kCreativeInstanceId,
                   test::kCreativeSetId, test::kCampaignId, test::kAdvertiserId,
                   test::kSegment, ConversionActionType::kViewThrough,
                   /*verifable*/ std::nullopt));
@@ -47,10 +46,10 @@ TEST(BraveAdsConversionBuilderTest, BuildConversion) {
 
 TEST(BraveAdsConversionBuilderTest, BuildVerifiableConversion) {
   // Arrange
-  const AdInfo ad = test::BuildAd(AdType::kNotificationAd,
+  const AdInfo ad = test::BuildAd(mojom::AdType::kNotificationAd,
                                   /*should_generate_random_uuids=*/false);
   const AdEventInfo ad_event =
-      BuildAdEvent(ad, ConfirmationType::kViewedImpression,
+      BuildAdEvent(ad, mojom::ConfirmationType::kViewedImpression,
                    /*created_at=*/test::Now());
 
   // Act
@@ -62,7 +61,7 @@ TEST(BraveAdsConversionBuilderTest, BuildVerifiableConversion) {
   // Assert
   EXPECT_THAT(conversion,
               ::testing::FieldsAre(
-                  AdType::kNotificationAd, test::kCreativeInstanceId,
+                  mojom::AdType::kNotificationAd, test::kCreativeInstanceId,
                   test::kCreativeSetId, test::kCampaignId, test::kAdvertiserId,
                   test::kSegment, ConversionActionType::kViewThrough,
                   VerifiableConversionInfo{

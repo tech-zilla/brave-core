@@ -8,12 +8,13 @@
 
 #include <vector>
 
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-forward.h"
 
 namespace brave_ads::test {
 
-std::vector<ConfirmationType> BuildConfirmationTypes(
-    ConfirmationType confirmation_type,
+std::vector<mojom::ConfirmationType>
+BuildConfirmationTypeForCountAndIntersperseOtherTypes(
+    mojom::ConfirmationType mojom_confirmation_type,
     int count);
 
 }  // namespace brave_ads::test

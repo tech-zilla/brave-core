@@ -19,7 +19,7 @@ using GetDiagnosticsCallback =
     base::OnceCallback<void(std::optional<base::Value::List> diagnostics)>;
 
 using GetStatementOfAccountsCallback =
-    base::OnceCallback<void(mojom::StatementInfoPtr statement)>;
+    base::OnceCallback<void(mojom::StatementInfoPtr mojom_statement)>;
 
 using MaybeServeInlineContentAdAsDictCallback =
     base::OnceCallback<void(const std::string& dimensions,
@@ -28,6 +28,8 @@ using MaybeServeInlineContentAdAsDictCallback =
 using PurgeOrphanedAdEventsForTypeCallback =
     base::OnceCallback<void(bool success)>;
 
+// TODO(https://github.com/brave/brave-browser/issues/24595): Transition
+// GetAdHistory from base::Value to a mojom data structure.
 using GetAdHistoryForUICallback =
     base::OnceCallback<void(std::optional<base::Value::List> ad_history)>;
 

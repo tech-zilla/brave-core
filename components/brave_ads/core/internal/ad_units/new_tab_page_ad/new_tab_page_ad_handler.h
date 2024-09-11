@@ -15,7 +15,7 @@
 #include "brave/components/brave_ads/core/internal/serving/new_tab_page_ad_serving_delegate.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/new_tab_page_ads/new_tab_page_ad_event_handler.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/new_tab_page_ads/new_tab_page_ad_event_handler_delegate.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-shared.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-forward.h"
 #include "brave/components/brave_ads/core/public/ads_callback.h"
 
 namespace brave_ads {
@@ -44,18 +44,19 @@ class NewTabPageAdHandler final : public NewTabPageAdEventHandlerDelegate,
 
   void TriggerEvent(const std::string& placement_id,
                     const std::string& creative_instance_id,
-                    mojom::NewTabPageAdEventType event_type,
+                    mojom::NewTabPageAdEventType mojom_ad_event_type,
                     TriggerAdEventCallback callback);
 
  private:
   void MaybeServeCallback(MaybeServeNewTabPageAdCallback callback,
                           const std::optional<NewTabPageAdInfo>& ad);
 
-  void TriggerServedEventCallback(const std::string& creative_instance_id,
-                                  TriggerAdEventCallback callback,
-                                  bool success,
-                                  const std::string& placement_id,
-                                  mojom::NewTabPageAdEventType event_type);
+  void TriggerServedEventCallback(
+      const std::string& creative_instance_id,
+      TriggerAdEventCallback callback,
+      bool success,
+      const std::string& placement_id,
+      mojom::NewTabPageAdEventType mojom_ad_event_type);
 
   // NewTabPageAdServingDelegate:
   void OnOpportunityAroseToServeNewTabPageAd() override;

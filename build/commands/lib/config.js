@@ -365,7 +365,6 @@ Config.prototype.buildArgs = function () {
     branding_path_product: "brave",
     enable_nacl: false,
     enable_widevine: true,
-    enable_feed_v2: true,
     // Our copy of signature_generator.py doesn't support --ignore_missing_cert:
     ignore_missing_widevine_signing_cert: false,
     target_cpu: this.targetArch,
@@ -543,6 +542,13 @@ Config.prototype.buildArgs = function () {
       (!this.isDebug() && !this.isComponentBuild() && !this.isReleaseBuild()))
   ) {
     args.symbol_level = 1
+  }
+
+  // For Linux Release builds, upstream doesn't want to use symbol_level = 2
+  // unless use_debug_fission is set. However, they don't set it when a
+  // cc_wrapper is used. Since we use cc_wrapper we need to set it manually.
+  if (this.getTargetOS() === 'linux' && this.isReleaseBuild()) {
+    args.use_debug_fission = true
   }
 
   if (this.getTargetOS() === 'mac' &&
@@ -752,6 +758,7 @@ Config.prototype.buildArgs = function () {
     delete args.zebpay_sandbox_oauth_url
     delete args.use_blink_v8_binding_new_idl_interface
     delete args.v8_enable_verify_heap
+    delete args.service_key_stt
   }
 
   args = Object.assign(args, this.extraGnArgs)
@@ -923,206 +930,6 @@ Config.prototype.update = function (options) {
 
   if (options.gclient_file && options.gclient_file !== 'default') {
     this.gClientFile = options.gclient_file
-  }
-
-  if (options.brave_google_api_key) {
-    this.braveGoogleApiKey = options.brave_google_api_key
-  }
-
-  if (options.brave_safebrowsing_api_key) {
-    this.braveAndroidSafeBrowsingApiKey = options.brave_safebrowsing_api_key
-  }
-
-  if (options.brave_safetynet_api_key) {
-    this.braveSafetyNetApiKey = options.brave_safetynet_api_key
-  }
-
-  if (options.brave_google_api_endpoint) {
-    this.googleApiEndpoint = options.brave_google_api_endpoint
-  }
-
-  if (options.brave_infura_project_id) {
-    this.infuraProjectId = options.brave_infura_project_id
-  }
-
-  if (options.bitflyer_production_client_id) {
-    this.bitFlyerProductionClientId = options.bitflyer_production_client_id
-  }
-
-  if (options.bitflyer_production_client_secret) {
-    this.bitFlyerProductionClientSecret = options.bitflyer_production_client_secret
-  }
-
-  if (options.bitflyer_production_fee_address) {
-    this.bitFlyerProductionFeeAddress = options.bitflyer_production_fee_address
-  }
-
-  if (options.bitflyer_production_url) {
-    this.bitFlyerProductionUrl = options.bitflyer_production_url
-  }
-
-  if (options.bitflyer_sandbox_client_id) {
-    this.bitFlyerSandboxClientId = options.bitflyer_sandbox_client_id
-  }
-
-  if (options.bitflyer_sandbox_client_secret) {
-    this.bitFlyerSandboxClientSecret = options.bitflyer_sandbox_client_secret
-  }
-
-  if (options.bitflyer_sandbox_fee_address) {
-    this.bitFlyerSandboxFeeAddress = options.bitflyer_sandbox_fee_address
-  }
-
-  if (options.bitflyer_sandbox_url) {
-    this.bitFlyerSandboxUrl = options.bitflyer_sandbox_url
-  }
-
-  if (options.gemini_production_api_url) {
-    this.geminiProductionApiUrl = options.gemini_production_api_url
-  }
-
-  if (options.gemini_production_client_id) {
-    this.geminiProductionClientId = options.gemini_production_client_id
-  }
-
-  if (options.gemini_production_client_secret) {
-    this.geminiProductionClientSecret = options.gemini_production_client_secret
-  }
-
-  if (options.gemini_production_fee_address) {
-    this.geminiProductionFeeAddress = options.gemini_production_fee_address
-  }
-
-  if (options.gemini_production_oauth_url) {
-    this.geminiProductionOauthUrl = options.gemini_production_oauth_url
-  }
-
-  if (options.gemini_sandbox_api_url) {
-    this.geminiSandboxApiUrl = options.gemini_sandbox_api_url
-  }
-
-  if (options.gemini_sandbox_client_id) {
-    this.geminiSandboxClientId = options.gemini_sandbox_client_id
-  }
-
-  if (options.gemini_sandbox_client_secret) {
-    this.geminiSandboxClientSecret = options.gemini_sandbox_client_secret
-  }
-
-  if (options.gemini_sandbox_fee_address) {
-    this.geminiSandboxFeeAddress = options.gemini_sandbox_fee_address
-  }
-
-  if (options.gemini_sandbox_oauth_url) {
-    this.geminiSandboxOauthUrl = options.gemini_sandbox_oauth_url
-  }
-
-  if (options.uphold_production_api_url) {
-    this.upholdProductionApiUrl = options.uphold_production_api_url
-  }
-
-  if (options.uphold_production_client_id) {
-    this.upholdProductionClientId = options.uphold_production_client_id
-  }
-
-  if (options.uphold_production_client_secret) {
-    this.upholdProductionClientSecret = options.uphold_production_client_secret
-  }
-
-  if (options.uphold_production_fee_address) {
-    this.upholdProductionFeeAddress = options.uphold_production_fee_address
-  }
-
-  if (options.uphold_production_oauth_url) {
-    this.upholdProductionOauthUrl = options.uphold_production_oauth_url
-  }
-
-  if (options.uphold_sandbox_api_url) {
-    this.upholdSandboxApiUrl = options.uphold_sandbox_api_url
-  }
-
-  if (options.uphold_sandbox_client_id) {
-    this.upholdSandboxClientId = options.uphold_sandbox_client_id
-  }
-
-  if (options.uphold_sandbox_client_secret) {
-    this.upholdSandboxClientSecret = options.uphold_sandbox_client_secret
-  }
-
-  if (options.uphold_sandbox_fee_address) {
-    this.upholdSandboxFeeAddress = options.uphold_sandbox_fee_address
-  }
-
-  if (options.uphold_sandbox_oauth_url) {
-    this.upholdSandboxOauthUrl = options.uphold_sandbox_oauth_url
-  }
-
-  if (options.zebpay_production_api_url) {
-    this.zebPayProductionApiUrl = options.zebpay_production_api_url
-  }
-
-  if (options.zebpay_production_client_id) {
-    this.zebPayProductionClientId = options.zebpay_production_client_id
-  }
-
-  if (options.zebpay_production_client_secret) {
-    this.zebPayProductionClientSecret = options.zebpay_production_client_secret
-  }
-
-  if (options.zebpay_production_oauth_url) {
-    this.zebPayProductionOauthUrl = options.zebpay_production_oauth_url
-  }
-
-  if (options.zebpay_sandbox_api_url) {
-    this.zebPaySandboxApiUrl = options.zebpay_sandbox_api_url
-  }
-
-  if (options.zebpay_sandbox_client_id) {
-    this.zebPaySandboxClientId = options.zebpay_sandbox_client_id
-  }
-
-  if (options.zebpay_sandbox_client_secret) {
-    this.zebPaySandboxClientSecret = options.zebpay_sandbox_client_secret
-  }
-
-  if (options.zebpay_sandbox_oauth_url) {
-    this.zebPaySandboxOauthUrl = options.zebpay_sandbox_oauth_url
-  }
-
-  if (options.safebrowsing_api_endpoint) {
-    this.safeBrowsingApiEndpoint = options.safebrowsing_api_endpoint
-  }
-
-  if (options.updater_prod_endpoint) {
-    this.updaterDevEndpoint = options.updater_prod_endpoint
-  }
-
-  if (options.updater_dev_endpoint) {
-    this.updaterDevEndpoint = options.updater_dev_endpoint
-  }
-
-  if (options.webcompat_report_api_endpoint) {
-    this.webcompatReportApiEndpoint = options.webcompat_report_api_endpoint
-  }
-
-  if (options.rewards_grant_dev_endpoint) {
-    this.rewardsGrantDevEndpoint = options.rewards_grant_dev_endpoint
-  }
-
-  if (options.rewards_grant_staging_endpoint) {
-    this.rewardsGrantStagingEndpoint = options.rewards_grant_staging_endpoint
-  }
-
-  if (options.rewards_grant_prod_endpoint) {
-    this.rewardsGrantProdEndpoint = options.rewards_grant_prod_endpoint
-  }
-
-  if (options.brave_stats_api_key) {
-    this.braveStatsApiKey = options.brave_stats_api_key
-  }
-
-  if (options.brave_stats_updater_url) {
-    this.braveStatsUpdaterUrl = options.brave_stats_updater_url
   }
 
   if (options.channel) {

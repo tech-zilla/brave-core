@@ -8,7 +8,7 @@
 #include "base/containers/adapters.h"
 #include "base/time/time.h"
 #include "brave/components/brave_ads/core/internal/ads_client/ads_client_util.h"
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "brave/components/brave_ads/core/public/ads_client/ads_client.h"
 
 namespace brave_ads {
@@ -26,7 +26,8 @@ bool DoesHistoryRespectRollingTimeConstraint(
 
   for (const auto& time : base::Reversed(history)) {
     if (time <= threshold) {
-      // If the time point exceeds the threshold, the cap has not been reached.
+      // If the time point is less than or equal to the threshold, the cap has
+      // not been reached.
       break;
     }
 
@@ -41,11 +42,11 @@ bool DoesHistoryRespectRollingTimeConstraint(
 }
 
 bool DoesHistoryRespectRollingTimeConstraint(
-    const AdType type,
+    const mojom::AdType mojom_ad_type,
     const base::TimeDelta time_constraint,
     const size_t cap) {
   const std::vector<base::Time> history = GetAdsClient()->GetCachedAdEvents(
-      ToString(type), ToString(ConfirmationType::kServedImpression));
+      mojom_ad_type, mojom::ConfirmationType::kServedImpression);
 
   return DoesHistoryRespectRollingTimeConstraint(history, time_constraint, cap);
 }

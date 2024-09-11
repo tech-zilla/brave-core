@@ -7,7 +7,6 @@
 
 #include "base/check.h"
 #include "base/containers/adapters.h"
-#include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
 #include "brave/components/brave_ads/core/internal/common/logging_util.h"
 #include "brave/components/brave_ads/core/internal/common/time/time_formatting_util.h"
@@ -25,7 +24,7 @@
 #include "brave/components/brave_ads/core/internal/user_engagement/conversions/resource/conversion_resource_info.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/conversions/types/verifiable_conversion/verifiable_conversion_builder.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/conversions/types/verifiable_conversion/verifiable_conversion_info.h"
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "url/gurl.h"
 
 namespace brave_ads {
@@ -153,6 +152,13 @@ void Conversions::CheckForConversions(
     }
     const auto& [creative_set_id, creative_set_conversion_bucket] = *iter;
 
+    // Have we exceeded the limit for creative set conversions?
+    if (creative_set_conversion_cap > 0 &&
+        creative_set_conversion_counts[creative_set_id] ==
+            creative_set_conversion_cap) {
+      continue;
+    }
+
     // Yes, so are we allowed to convert this ad event?
     if (!IsAllowedToConvertAdEvent(ad_event)) {
       // No, so skip this ad event.
@@ -179,13 +185,8 @@ void Conversions::CheckForConversions(
       did_convert = true;
 
       // Have we exceeded the limit for creative set conversions?
-      if (creative_set_conversion_cap == 0) {
-        // There is no limit, so continue converting.
-        continue;
-      }
-
       ++creative_set_conversion_counts[creative_set_id];
-      if (creative_set_conversion_counts[creative_set_id] >=
+      if (creative_set_conversion_counts[creative_set_id] ==
           creative_set_conversion_cap) {
         // Yes, so stop converting.
         break;
@@ -208,7 +209,7 @@ void Conversions::Convert(
     const AdEventInfo& ad_event,
     const std::optional<VerifiableConversionInfo>& verifiable_conversion) {
   RecordAdEvent(
-      RebuildAdEvent(ad_event, ConfirmationType::kConversion,
+      RebuildAdEvent(ad_event, mojom::ConfirmationType::kConversion,
                      /*created_at=*/base::Time::Now()),
       base::BindOnce(&Conversions::ConvertCallback, weak_factory_.GetWeakPtr(),
                      ad_event, verifiable_conversion));
@@ -219,12 +220,6 @@ void Conversions::ConvertCallback(
     const std::optional<VerifiableConversionInfo>& verifiable_conversion,
     const bool success) {
   if (!success) {
-    // TODO(https://github.com/brave/brave-browser/issues/32066):
-    // Detect potential defects using `DumpWithoutCrashing`.
-    SCOPED_CRASH_KEY_STRING64("Issue32066", "failure_reason",
-                              "Failed to record ad conversion event");
-    base::debug::DumpWithoutCrashing();
-
     BLOG(0, "Failed to record ad conversion event");
 
     return NotifyFailedToConvertAd(ad_event.creative_instance_id);

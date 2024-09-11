@@ -12,9 +12,8 @@
 #include "brave/components/brave_ads/core/internal/creatives/conversions/creative_set_conversion_test_util.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/ad_event_builder.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/conversions/types/verifiable_conversion/verifiable_conversion_test_constants.h"
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "brave/components/brave_ads/core/public/ad_units/ad_info.h"
-#include "brave/components/brave_ads/core/public/ad_units/ad_type.h"
 #include "url/gurl.h"
 
 // npm run test -- brave_unit_tests --filter=BraveAds*
@@ -73,26 +72,30 @@ TEST_F(BraveAdsCreativeSetConversionUtilTest,
 
 TEST_F(BraveAdsCreativeSetConversionUtilTest, GetCreativeSetConversionCounts) {
   // Arrange
-  const AdInfo ad = test::BuildAd(AdType::kNotificationAd,
+  const AdInfo ad = test::BuildAd(mojom::AdType::kNotificationAd,
                                   /*should_generate_random_uuids=*/true);
 
   AdEventList ad_events;
 
-  const AdEventInfo ad_event_1 = BuildAdEvent(
-      ad, ConfirmationType::kServedImpression, /*created_at=*/test::Now());
+  const AdEventInfo ad_event_1 =
+      BuildAdEvent(ad, mojom::ConfirmationType::kServedImpression,
+                   /*created_at=*/test::Now());
   ad_events.push_back(ad_event_1);
 
-  AdEventInfo ad_event_2 = BuildAdEvent(ad, ConfirmationType::kConversion,
-                                        /*created_at=*/test::Now());
+  AdEventInfo ad_event_2 =
+      BuildAdEvent(ad, mojom::ConfirmationType::kConversion,
+                   /*created_at=*/test::Now());
   ad_event_2.creative_set_id = "4e83a23c-1194-40f8-8fdc-2f38d7ed75c8";
   ad_events.push_back(ad_event_2);
 
-  const AdEventInfo ad_event_3 = BuildAdEvent(
-      ad, ConfirmationType::kViewedImpression, /*created_at=*/test::Now());
+  const AdEventInfo ad_event_3 =
+      BuildAdEvent(ad, mojom::ConfirmationType::kViewedImpression,
+                   /*created_at=*/test::Now());
   ad_events.push_back(ad_event_3);
 
-  const AdEventInfo ad_event_4 = BuildAdEvent(ad, ConfirmationType::kConversion,
-                                              /*created_at=*/test::Now());
+  const AdEventInfo ad_event_4 =
+      BuildAdEvent(ad, mojom::ConfirmationType::kConversion,
+                   /*created_at=*/test::Now());
   ad_events.push_back(ad_event_4);
   ad_events.push_back(ad_event_4);
 
@@ -167,6 +170,7 @@ TEST_F(BraveAdsCreativeSetConversionUtilTest,
           /*url_pattern=*/"https://foo.com/*",
           /*observation_window=*/base::Days(3));  // Bucket #1
   creative_set_conversions.push_back(creative_set_conversion_1);
+  creative_set_conversions.push_back(creative_set_conversion_1);
 
   const CreativeSetConversionInfo creative_set_conversion_2 =
       test::BuildCreativeSetConversion(
@@ -175,22 +179,24 @@ TEST_F(BraveAdsCreativeSetConversionUtilTest,
           /*observation_window=*/base::Days(30));  // Bucket #1
   creative_set_conversions.push_back(creative_set_conversion_2);
   creative_set_conversions.push_back(creative_set_conversion_2);
+  creative_set_conversions.push_back(creative_set_conversion_2);
 
   const CreativeSetConversionCountMap creative_set_conversion_counts = {
-      {creative_set_conversion_1.id, 1}, {creative_set_conversion_2.id, 2}};
+      {creative_set_conversion_1.id, 2}, {creative_set_conversion_2.id, 3}};
 
   CreativeSetConversionBucketMap creative_set_conversion_buckets =
       SortCreativeSetConversionsIntoBuckets(creative_set_conversions);
 
   // Act
   FilterCreativeSetConversionBucketsThatExceedTheCap(
-      creative_set_conversion_counts, /*creative_set_conversion_cap*/ 2,
+      creative_set_conversion_counts, /*creative_set_conversion_cap=*/2,
       creative_set_conversion_buckets);
 
   // Assert
   const CreativeSetConversionBucketMap
       expected_creative_set_conversion_buckets = {
-          {creative_set_conversion_1.id, {creative_set_conversion_1}}};
+          {creative_set_conversion_1.id,
+           {creative_set_conversion_1, creative_set_conversion_1}}};
   EXPECT_EQ(expected_creative_set_conversion_buckets,
             creative_set_conversion_buckets);
 }
@@ -206,32 +212,36 @@ TEST_F(BraveAdsCreativeSetConversionUtilTest,
           /*url_pattern=*/"https://foo.com/*",
           /*observation_window=*/base::Days(3));  // Bucket #1
   creative_set_conversions.push_back(creative_set_conversion_1);
+  creative_set_conversions.push_back(creative_set_conversion_1);
 
   const CreativeSetConversionInfo creative_set_conversion_2 =
       test::BuildCreativeSetConversion(
           /*creative_set_id=*/"4e83a23c-1194-40f8-8fdc-2f38d7ed75c8",
           /*url_pattern=*/"https://baz.com/",
-          /*observation_window=*/base::Days(30));  // Bucket #1
+          /*observation_window=*/base::Days(30));  // Bucket #2
+  creative_set_conversions.push_back(creative_set_conversion_2);
   creative_set_conversions.push_back(creative_set_conversion_2);
   creative_set_conversions.push_back(creative_set_conversion_2);
 
   const CreativeSetConversionCountMap creative_set_conversion_counts = {
-      {creative_set_conversion_1.id, 1}, {creative_set_conversion_2.id, 2}};
+      {creative_set_conversion_1.id, 2}, {creative_set_conversion_2.id, 3}};
 
   CreativeSetConversionBucketMap creative_set_conversion_buckets =
       SortCreativeSetConversionsIntoBuckets(creative_set_conversions);
 
   // Act
   FilterCreativeSetConversionBucketsThatExceedTheCap(
-      creative_set_conversion_counts, /*creative_set_conversion_cap*/ 0,
+      creative_set_conversion_counts, /*creative_set_conversion_cap=*/0,
       creative_set_conversion_buckets);
 
   // Assert
   const CreativeSetConversionBucketMap
       expected_creative_set_conversion_buckets = {
-          {creative_set_conversion_1.id, {creative_set_conversion_1}},
+          {creative_set_conversion_1.id,
+           {creative_set_conversion_1, creative_set_conversion_1}},
           {creative_set_conversion_2.id,
-           {creative_set_conversion_2, creative_set_conversion_2}}};
+           {creative_set_conversion_2, creative_set_conversion_2,
+            creative_set_conversion_2}}};
   EXPECT_EQ(expected_creative_set_conversion_buckets,
             creative_set_conversion_buckets);
 }
@@ -239,10 +249,11 @@ TEST_F(BraveAdsCreativeSetConversionUtilTest,
 TEST_F(BraveAdsCreativeSetConversionUtilTest,
        GetCreativeSetConversionsWithinObservationWindow) {
   // Arrange
-  const AdInfo ad = test::BuildAd(AdType::kNotificationAd,
+  const AdInfo ad = test::BuildAd(mojom::AdType::kNotificationAd,
                                   /*should_generate_random_uuids=*/false);
-  const AdEventInfo ad_event = BuildAdEvent(ad, ConfirmationType::kConversion,
-                                            /*created_at=*/test::Now());
+  const AdEventInfo ad_event =
+      BuildAdEvent(ad, mojom::ConfirmationType::kConversion,
+                   /*created_at=*/test::Now());
 
   AdvanceClockBy(base::Days(3) + base::Milliseconds(1));
 

@@ -13,8 +13,7 @@
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/ad_event_test_util.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/new_tab_page_ads/new_tab_page_ad_event_handler.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/new_tab_page_ads/new_tab_page_ad_event_handler_delegate_mock.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-shared.h"
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "brave/components/brave_ads/core/public/ad_units/new_tab_page_ad/new_tab_page_ad_info.h"
 
 // npm run test -- brave_unit_tests --filter=BraveAds*
@@ -43,13 +42,13 @@ class BraveAdsNewTabPageAdEventHandlerForRewardsTest : public test::TestBase {
   void FireEventAndVerifyExpectations(
       const std::string& placement_id,
       const std::string& creative_instance_id,
-      const mojom::NewTabPageAdEventType event_type,
+      const mojom::NewTabPageAdEventType mojom_ad_event_type,
       const bool should_fire_event) {
     base::MockCallback<FireNewTabPageAdEventHandlerCallback> callback;
-    EXPECT_CALL(callback,
-                Run(/*success=*/should_fire_event, placement_id, event_type));
-    event_handler_.FireEvent(placement_id, creative_instance_id, event_type,
-                             callback.Get());
+    EXPECT_CALL(callback, Run(/*success=*/should_fire_event, placement_id,
+                              mojom_ad_event_type));
+    event_handler_.FireEvent(placement_id, creative_instance_id,
+                             mojom_ad_event_type, callback.Get());
   }
 
   NewTabPageAdEventHandler event_handler_;
@@ -71,8 +70,7 @@ TEST_F(BraveAdsNewTabPageAdEventHandlerForRewardsTest, FireServedEvent) {
 TEST_F(BraveAdsNewTabPageAdEventHandlerForRewardsTest, FireViewedEvent) {
   // Arrange
   const NewTabPageAdInfo ad = BuildAndSaveAd();
-
-  test::RecordAdEvent(ad, ConfirmationType::kServedImpression);
+  test::RecordAdEvent(ad, mojom::ConfirmationType::kServedImpression);
 
   // Act & Assert
   EXPECT_CALL(delegate_mock_, OnDidFireNewTabPageAdViewedEvent(ad));
@@ -86,9 +84,8 @@ TEST_F(BraveAdsNewTabPageAdEventHandlerForRewardsTest,
        DoNotFireViewedEventIfAdPlacementWasAlreadyViewed) {
   // Arrange
   const NewTabPageAdInfo ad = BuildAndSaveAd();
-
-  test::RecordAdEvents(ad, {ConfirmationType::kServedImpression,
-                            ConfirmationType::kViewedImpression});
+  test::RecordAdEvents(ad, {mojom::ConfirmationType::kServedImpression,
+                            mojom::ConfirmationType::kViewedImpression});
 
   // Act & Assert
   EXPECT_CALL(delegate_mock_,
@@ -120,9 +117,8 @@ TEST_F(BraveAdsNewTabPageAdEventHandlerForRewardsTest,
 TEST_F(BraveAdsNewTabPageAdEventHandlerForRewardsTest, FireClickedEvent) {
   // Arrange
   const NewTabPageAdInfo ad = BuildAndSaveAd();
-
-  test::RecordAdEvents(ad, {ConfirmationType::kServedImpression,
-                            ConfirmationType::kViewedImpression});
+  test::RecordAdEvents(ad, {mojom::ConfirmationType::kServedImpression,
+                            mojom::ConfirmationType::kViewedImpression});
 
   // Act & Assert
   EXPECT_CALL(delegate_mock_, OnDidFireNewTabPageAdClickedEvent(ad));
@@ -135,10 +131,9 @@ TEST_F(BraveAdsNewTabPageAdEventHandlerForRewardsTest,
        DoNotFireClickedEventIfAdPlacementWasAlreadyClicked) {
   // Arrange
   const NewTabPageAdInfo ad = BuildAndSaveAd();
-
-  test::RecordAdEvents(
-      ad, {ConfirmationType::kServedImpression,
-           ConfirmationType::kViewedImpression, ConfirmationType::kClicked});
+  test::RecordAdEvents(ad, {mojom::ConfirmationType::kServedImpression,
+                            mojom::ConfirmationType::kViewedImpression,
+                            mojom::ConfirmationType::kClicked});
 
   // Act & Assert
   EXPECT_CALL(delegate_mock_, OnFailedToFireNewTabPageAdEvent(

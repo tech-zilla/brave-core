@@ -39,7 +39,7 @@ CreativeSetConversionCountMap GetCreativeSetConversionCounts(
   CreativeSetConversionCountMap creative_set_conversion_counts;
 
   for (const auto& ad_event : ad_events) {
-    if (ad_event.confirmation_type == ConfirmationType::kConversion) {
+    if (ad_event.confirmation_type == mojom::ConfirmationType::kConversion) {
       ++creative_set_conversion_counts[ad_event.creative_set_id];
     }
   }
@@ -69,7 +69,7 @@ void FilterCreativeSetConversionBucketsThatExceedTheCap(
 
   for (const auto& [creative_set_id, creative_set_conversion_count] :
        creative_set_conversion_counts) {
-    if (creative_set_conversion_count >= creative_set_conversion_cap) {
+    if (creative_set_conversion_count > creative_set_conversion_cap) {
       creative_set_conversion_buckets.erase(creative_set_id);
     }
   }

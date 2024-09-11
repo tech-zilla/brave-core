@@ -11,8 +11,7 @@
 #include "brave/components/brave_ads/core/internal/account/transactions/transactions_test_util.h"
 #include "brave/components/brave_ads/core/internal/common/test/test_base.h"
 #include "brave/components/brave_ads/core/internal/common/test/time_test_util.h"
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
-#include "brave/components/brave_ads/core/public/ad_units/ad_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 
 // npm run test -- brave_unit_tests --filter=BraveAds*
 
@@ -31,14 +30,14 @@ class BraveAdsNextPaymentDateUtilTest : public test::TestBase {
 };
 
 TEST_F(BraveAdsNextPaymentDateUtilTest,
-       TimeNowIsBeforeNextPaymentDayWithReconciledTransactionsLastMonth) {
+       TimeNowIsBeforeNextPaymentDayWithReconciledTransactionsPreviousMonth) {
   // Arrange
   AdvanceClockTo(test::TimeFromUTCString("1 January 2020"));
 
   TransactionList transactions;
   const TransactionInfo transaction = test::BuildTransaction(
-      /*value=*/0.01, AdType::kNotificationAd,
-      ConfirmationType::kViewedImpression, /*reconciled_at=*/test::Now(),
+      /*value=*/0.01, mojom::AdType::kNotificationAd,
+      mojom::ConfirmationType::kViewedImpression, /*reconciled_at=*/test::Now(),
       /*should_generate_random_uuids=*/true);
   transactions.push_back(transaction);
 
@@ -57,7 +56,7 @@ TEST_F(BraveAdsNextPaymentDateUtilTest,
 }
 
 TEST_F(BraveAdsNextPaymentDateUtilTest,
-       TimeNowIsBeforeNextPaymentDayWithNoReconciledTransactionsLastMonth) {
+       TimeNowIsBeforeNextPaymentDayWithNoReconciledTransactionsPreviousMonth) {
   // Arrange
   AdvanceClockTo(test::TimeFromUTCString("1 February 2020"));
 
@@ -66,7 +65,7 @@ TEST_F(BraveAdsNextPaymentDateUtilTest,
 
   // Act
   const base::Time next_payment_date =
-      CalculateNextPaymentDate(next_token_redemption_at, /*transactions*/ {});
+      CalculateNextPaymentDate(next_token_redemption_at, /*transactions=*/{});
 
   // Assert
   EXPECT_EQ(test::TimeFromUTCString("5 March 2020 23:59:59.999"),
@@ -80,8 +79,8 @@ TEST_F(BraveAdsNextPaymentDateUtilTest,
 
   TransactionList transactions;
   const TransactionInfo transaction = test::BuildTransaction(
-      /*value=*/0.01, AdType::kNotificationAd,
-      ConfirmationType::kViewedImpression, /*reconciled_at=*/test::Now(),
+      /*value=*/0.01, mojom::AdType::kNotificationAd,
+      mojom::ConfirmationType::kViewedImpression, /*reconciled_at=*/test::Now(),
       /*should_generate_random_uuids=*/true);
   transactions.push_back(transaction);
 
@@ -108,7 +107,7 @@ TEST_F(
 
   // Act
   const base::Time next_payment_date =
-      CalculateNextPaymentDate(next_token_redemption_at, /*transactions*/ {});
+      CalculateNextPaymentDate(next_token_redemption_at, /*transactions=*/{});
 
   // Assert
   EXPECT_EQ(test::TimeFromUTCString("5 February 2020 23:59:59.999"),
@@ -126,7 +125,7 @@ TEST_F(
 
   // Act
   const base::Time next_payment_date =
-      CalculateNextPaymentDate(next_token_redemption_at, /*transactions*/ {});
+      CalculateNextPaymentDate(next_token_redemption_at, /*transactions=*/{});
 
   // Assert
   EXPECT_EQ(test::TimeFromUTCString("5 March 2020 23:59:59.999"),

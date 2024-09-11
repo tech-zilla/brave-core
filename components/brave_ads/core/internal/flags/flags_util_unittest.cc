@@ -15,7 +15,7 @@
 #include "brave/components/brave_ads/core/internal/common/test/test_base.h"
 #include "brave/components/brave_ads/core/internal/flags/environment/environment_types_test_util.h"
 #include "brave/components/brave_ads/core/internal/flags/flag_constants.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"  // IWYU pragma: keep
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "components/variations/variations_switches.h"
 
 // npm run test -- brave_unit_tests --filter=BraveAds*
@@ -78,13 +78,13 @@ TEST_P(BraveAdsFlagsUtilTest, BuildFlags) {
   const ParamInfo param = GetParam();
 
   // Act
-  const mojom::FlagsPtr flags = BuildFlags();
+  const mojom::FlagsPtr mojom_flags = BuildFlags();
 
   // Assert
-  EXPECT_EQ(param.expected_should_debug, flags->should_debug);
+  EXPECT_EQ(param.expected_should_debug, mojom_flags->should_debug);
   EXPECT_EQ(param.expected_did_override_command_line_switches,
-            flags->did_override_from_command_line);
-  EXPECT_EQ(param.expected_environment_type, flags->environment_type);
+            mojom_flags->did_override_from_command_line);
+  EXPECT_EQ(param.expected_environment_type, mojom_flags->environment_type);
 }
 
 std::string TestParamToString(

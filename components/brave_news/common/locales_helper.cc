@@ -37,11 +37,12 @@ constexpr auto kEnabledLanguages =
 constexpr auto kEnabledLocales =
     base::MakeFixedFlatSet<std::string_view>(base::sorted_unique,
                                              {
-                                                 "de_DE"
+                                                 "de_DE",
                                                  "es_AR",
                                                  "es_ES",
                                                  "es_MX",
                                                  "fr_FR",
+                                                 "it_IT",
                                                  "pt_BR",
                                              });
 

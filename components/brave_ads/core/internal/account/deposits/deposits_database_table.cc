@@ -9,7 +9,6 @@
 #include <utility>
 
 #include "base/check.h"
-#include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
 #include "base/strings/string_util.h"
 #include "brave/components/brave_ads/core/internal/ads_client/ads_client_util.h"
@@ -28,7 +27,7 @@ namespace {
 
 constexpr char kTableName[] = "deposits";
 
-void BindColumnTypes(mojom::DBActionInfo* const mojom_db_action) {
+void BindColumnTypes(const mojom::DBActionInfoPtr& mojom_db_action) {
   CHECK(mojom_db_action);
 
   mojom_db_action->bind_column_types = {
@@ -38,7 +37,7 @@ void BindColumnTypes(mojom::DBActionInfo* const mojom_db_action) {
   };
 }
 
-size_t BindColumns(mojom::DBActionInfo* mojom_db_action,
+size_t BindColumns(const mojom::DBActionInfoPtr& mojom_db_action,
                    const CreativeAdList& creative_ads) {
   CHECK(mojom_db_action);
   CHECK(!creative_ads.empty());
@@ -59,7 +58,7 @@ size_t BindColumns(mojom::DBActionInfo* mojom_db_action,
   return row_count;
 }
 
-void BindColumns(mojom::DBActionInfo* const mojom_db_action,
+void BindColumns(const mojom::DBActionInfoPtr& mojom_db_action,
                  const DepositInfo& deposit) {
   CHECK(mojom_db_action);
   CHECK(deposit.IsValid());
@@ -69,7 +68,7 @@ void BindColumns(mojom::DBActionInfo* const mojom_db_action,
   BindColumnTime(mojom_db_action, 2, deposit.expire_at.value_or(base::Time()));
 }
 
-DepositInfo FromMojomRow(const mojom::DBRowInfo* const mojom_db_row) {
+DepositInfo FromMojomRow(const mojom::DBRowInfoPtr& mojom_db_row) {
   CHECK(mojom_db_row);
 
   DepositInfo deposit;
@@ -88,7 +87,7 @@ void GetForCreativeInstanceIdCallback(
     const std::string& /*creative_instance_id*/,
     GetDepositsCallback callback,
     mojom::DBTransactionResultInfoPtr mojom_db_transaction_result) {
-  if (IsError(&*mojom_db_transaction_result)) {
+  if (IsError(mojom_db_transaction_result)) {
     BLOG(0, "Failed to get deposit value");
 
     return std::move(callback).Run(/*success=*/false,
@@ -103,14 +102,8 @@ void GetForCreativeInstanceIdCallback(
 
   const mojom::DBRowInfoPtr mojom_db_row =
       std::move(mojom_db_transaction_result->rows_union->get_rows().front());
-  DepositInfo deposit = FromMojomRow(&*mojom_db_row);
+  DepositInfo deposit = FromMojomRow(mojom_db_row);
   if (!deposit.IsValid()) {
-    // TODO(https://github.com/brave/brave-browser/issues/32066): Detect
-    // potential defects using `DumpWithoutCrashing`.
-    SCOPED_CRASH_KEY_STRING64("Issue32066", "failure_reason",
-                              "Invalid deposit");
-    base::debug::DumpWithoutCrashing();
-
     BLOG(0, "Invalid deposit");
 
     return std::move(callback).Run(/*success=*/false, /*deposit=*/std::nullopt);
@@ -119,7 +112,7 @@ void GetForCreativeInstanceIdCallback(
   std::move(callback).Run(/*success=*/true, std::move(deposit));
 }
 
-void MigrateToV43(mojom::DBTransactionInfo* const mojom_db_transaction) {
+void MigrateToV43(const mojom::DBTransactionInfoPtr& mojom_db_transaction) {
   CHECK(mojom_db_transaction);
 
   // Optimize database query for `GetForCreativeInstanceId`.
@@ -135,12 +128,6 @@ void MigrateToV43(mojom::DBTransactionInfo* const mojom_db_transaction) {
 
 void Deposits::Save(const DepositInfo& deposit, ResultCallback callback) {
   if (!deposit.IsValid()) {
-    // TODO(https://github.com/brave/brave-browser/issues/32066): Detect
-    // potential defects using `DumpWithoutCrashing`.
-    SCOPED_CRASH_KEY_STRING64("Issue32066", "failure_reason",
-                              "Invalid deposit");
-    base::debug::DumpWithoutCrashing();
-
     BLOG(0, "Invalid deposit");
 
     return std::move(callback).Run(/*success=*/false);
@@ -149,12 +136,12 @@ void Deposits::Save(const DepositInfo& deposit, ResultCallback callback) {
   mojom::DBTransactionInfoPtr mojom_db_transaction =
       mojom::DBTransactionInfo::New();
 
-  Insert(&*mojom_db_transaction, deposit);
+  Insert(mojom_db_transaction, deposit);
 
   RunDBTransaction(std::move(mojom_db_transaction), std::move(callback));
 }
 
-void Deposits::Insert(mojom::DBTransactionInfo* mojom_db_transaction,
+void Deposits::Insert(const mojom::DBTransactionInfoPtr& mojom_db_transaction,
                       const CreativeAdList& creative_ads) {
   CHECK(mojom_db_transaction);
 
@@ -164,18 +151,18 @@ void Deposits::Insert(mojom::DBTransactionInfo* mojom_db_transaction,
 
   mojom::DBActionInfoPtr mojom_db_action = mojom::DBActionInfo::New();
   mojom_db_action->type = mojom::DBActionInfo::Type::kRunStatement;
-  mojom_db_action->sql = BuildInsertSql(&*mojom_db_action, creative_ads);
+  mojom_db_action->sql = BuildInsertSql(mojom_db_action, creative_ads);
   mojom_db_transaction->actions.push_back(std::move(mojom_db_action));
 }
 
-void Deposits::Insert(mojom::DBTransactionInfo* mojom_db_transaction,
+void Deposits::Insert(const mojom::DBTransactionInfoPtr& mojom_db_transaction,
                       const DepositInfo& deposit) {
   CHECK(mojom_db_transaction);
   CHECK(deposit.IsValid());
 
   mojom::DBActionInfoPtr mojom_db_action = mojom::DBActionInfo::New();
   mojom_db_action->type = mojom::DBActionInfo::Type::kRunStatement;
-  mojom_db_action->sql = BuildInsertSql(&*mojom_db_action, deposit);
+  mojom_db_action->sql = BuildInsertSql(mojom_db_action, deposit);
   mojom_db_transaction->actions.push_back(std::move(mojom_db_action));
 }
 
@@ -201,7 +188,7 @@ void Deposits::GetForCreativeInstanceId(const std::string& creative_instance_id,
           WHERE
             creative_instance_id = '$2';)",
       {GetTableName(), creative_instance_id}, nullptr);
-  BindColumnTypes(&*mojom_db_action);
+  BindColumnTypes(mojom_db_action);
   mojom_db_transaction->actions.push_back(std::move(mojom_db_action));
 
   GetAdsClient()->RunDBTransaction(
@@ -213,7 +200,7 @@ void Deposits::GetForCreativeInstanceId(const std::string& creative_instance_id,
 void Deposits::PurgeExpired(ResultCallback callback) const {
   mojom::DBTransactionInfoPtr mojom_db_transaction =
       mojom::DBTransactionInfo::New();
-  Execute(&*mojom_db_transaction, R"(
+  Execute(mojom_db_transaction, R"(
             DELETE FROM
               $1
             WHERE
@@ -227,7 +214,7 @@ std::string Deposits::GetTableName() const {
   return kTableName;
 }
 
-void Deposits::Create(mojom::DBTransactionInfo* const mojom_db_transaction) {
+void Deposits::Create(const mojom::DBTransactionInfoPtr& mojom_db_transaction) {
   CHECK(mojom_db_transaction);
 
   Execute(mojom_db_transaction, R"(
@@ -246,7 +233,7 @@ void Deposits::Create(mojom::DBTransactionInfo* const mojom_db_transaction) {
                    /*columns=*/{"expire_at"});
 }
 
-void Deposits::Migrate(mojom::DBTransactionInfo* mojom_db_transaction,
+void Deposits::Migrate(const mojom::DBTransactionInfoPtr& mojom_db_transaction,
                        const int to_version) {
   CHECK(mojom_db_transaction);
 
@@ -260,8 +247,9 @@ void Deposits::Migrate(mojom::DBTransactionInfo* mojom_db_transaction,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::string Deposits::BuildInsertSql(mojom::DBActionInfo* mojom_db_action,
-                                     const CreativeAdList& creative_ads) const {
+std::string Deposits::BuildInsertSql(
+    const mojom::DBActionInfoPtr& mojom_db_action,
+    const CreativeAdList& creative_ads) const {
   CHECK(mojom_db_action);
   CHECK(!creative_ads.empty());
 
@@ -279,8 +267,9 @@ std::string Deposits::BuildInsertSql(mojom::DBActionInfo* mojom_db_action,
       nullptr);
 }
 
-std::string Deposits::BuildInsertSql(mojom::DBActionInfo* mojom_db_action,
-                                     const DepositInfo& deposit) const {
+std::string Deposits::BuildInsertSql(
+    const mojom::DBActionInfoPtr& mojom_db_action,
+    const DepositInfo& deposit) const {
   CHECK(mojom_db_action);
   CHECK(deposit.IsValid());
 

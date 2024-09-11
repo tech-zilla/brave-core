@@ -33,8 +33,10 @@ namespace bat_ads {
 class BatAdsClientMojoBridge : public brave_ads::AdsClient {
  public:
   explicit BatAdsClientMojoBridge(
-      mojo::PendingAssociatedRemote<mojom::BatAdsClient> client_info,
-      mojo::PendingReceiver<mojom::BatAdsClientNotifier> client_notifier);
+      mojo::PendingAssociatedRemote<mojom::BatAdsClient>
+          bat_ads_client_pending_associated_remote,
+      mojo::PendingReceiver<mojom::BatAdsClientNotifier>
+          bat_ads_client_notifier_pending_receiver);
 
   BatAdsClientMojoBridge(const BatAdsClientMojoBridge&) = delete;
   BatAdsClientMojoBridge& operator=(const BatAdsClientMojoBridge&) = delete;
@@ -60,20 +62,22 @@ class BatAdsClientMojoBridge : public brave_ads::AdsClient {
   void ShowNotificationAd(const brave_ads::NotificationAdInfo& ad) override;
   void CloseNotificationAd(const std::string& placement_id) override;
 
-  void CacheAdEventForInstanceId(const std::string& id,
-                                 const std::string& ad_type,
-                                 const std::string& confirmation_type,
-                                 base::Time time) const override;
+  void CacheAdEventForInstanceId(
+      const std::string& id,
+      brave_ads::mojom::AdType mojom_ad_type,
+      brave_ads::mojom::ConfirmationType mojom_confirmation_type,
+      base::Time time) const override;
   std::vector<base::Time> GetCachedAdEvents(
-      const std::string& ad_type,
-      const std::string& confirmation_type) const override;
+      brave_ads::mojom::AdType mojom_ad_type,
+      brave_ads::mojom::ConfirmationType mojom_confirmation_type)
+      const override;
   void ResetAdEventCacheForInstanceId(const std::string& id) const override;
 
   void GetSiteHistory(int max_count,
                       int days_ago,
                       brave_ads::GetSiteHistoryCallback callback) override;
 
-  void UrlRequest(brave_ads::mojom::UrlRequestInfoPtr url_request,
+  void UrlRequest(brave_ads::mojom::UrlRequestInfoPtr mojom_url_request,
                   brave_ads::UrlRequestCallback callback) override;
 
   void Save(const std::string& name,
@@ -122,9 +126,9 @@ class BatAdsClientMojoBridge : public brave_ads::AdsClient {
       cached_profile_prefs_;
   base::flat_map</*path=*/std::string, /*value=*/base::Value>
       cached_local_state_prefs_;
-  mojo::AssociatedRemote<mojom::BatAdsClient>
-      bat_ads_client_associated_receiver_;
-  BatAdsClientNotifierImpl notifier_impl_;
+
+  mojo::AssociatedRemote<mojom::BatAdsClient> bat_ads_client_associated_remote_;
+  BatAdsClientNotifierImpl bat_ads_client_notifier_impl_;
 };
 
 }  // namespace bat_ads

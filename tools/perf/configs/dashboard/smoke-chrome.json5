@@ -3,7 +3,9 @@
     "dashboard-bot-name": "test-agent",
     "browser-type": "chromium",
     "profile": "chrome-typical-win",
-    "extra-browser-args": ["--disable-features=CalculateNativeWinOcclusion"],
+    "extra-browser-args": [
+      "--disable-features=CalculateNativeWinOcclusion",
+    ],
     "extra-benchmark-args": [],
     "save-artifacts": true,
   }],
@@ -35,6 +37,7 @@
         "load:site:twitter:2023",
         "load:site:imdb:2024",
         "load:ntp:brave_news:2024",
+        "multitab_load:site:example.com:2024",
       ]
     },
     {

@@ -21,8 +21,7 @@
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/ad_event_test_util.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/search_result_ads/search_result_ad_event_handler.h"
 #include "brave/components/brave_ads/core/internal/user_engagement/ad_events/search_result_ads/search_result_ad_event_handler_delegate_mock.h"
-#include "brave/components/brave_ads/core/mojom/brave_ads.mojom-shared.h"
-#include "brave/components/brave_ads/core/public/account/confirmations/confirmation_type.h"
+#include "brave/components/brave_ads/core/mojom/brave_ads.mojom.h"
 #include "brave/components/brave_ads/core/public/ads_feature.h"
 
 // npm run test -- brave_unit_tests --filter=BraveAds*
@@ -69,20 +68,21 @@ class BraveAdsSearchResultAdEventHandlerForNonRewardsTest
 
   void FireEventAndVerifyExpectations(
       const mojom::CreativeSearchResultAdInfoPtr& mojom_creative_ad,
-      const mojom::SearchResultAdEventType event_type,
+      const mojom::SearchResultAdEventType mojom_ad_event_type,
       const bool should_fire_event) {
     CHECK(mojom_creative_ad);
 
     base::MockCallback<FireSearchResultAdEventHandlerCallback> callback;
-    EXPECT_CALL(callback, Run(/*success=*/should_fire_event,
-                              mojom_creative_ad->placement_id, event_type));
-    event_handler_.FireEvent(mojom_creative_ad.Clone(), event_type,
+    EXPECT_CALL(callback,
+                Run(/*success=*/should_fire_event,
+                    mojom_creative_ad->placement_id, mojom_ad_event_type));
+    event_handler_.FireEvent(mojom_creative_ad.Clone(), mojom_ad_event_type,
                              callback.Get());
 
     size_t expected_count = 0;
 
     if (should_fire_event &&
-        event_type == mojom::SearchResultAdEventType::kClicked) {
+        mojom_ad_event_type == mojom::SearchResultAdEventType::kClicked) {
       const SearchResultAdInfo ad =
           FromMojomBuildSearchResultAd(mojom_creative_ad);
       expected_count =
@@ -226,8 +226,7 @@ TEST_F(BraveAdsSearchResultAdEventHandlerForNonRewardsTest,
       test::BuildCreativeSearchResultAdWithConversion(
           /*should_generate_random_uuids=*/true);
   const SearchResultAdInfo ad = FromMojomBuildSearchResultAd(mojom_creative_ad);
-
-  test::RecordAdEvent(ad, ConfirmationType::kClicked);
+  test::RecordAdEvent(ad, mojom::ConfirmationType::kClicked);
 
   // Act & Assert
   EXPECT_CALL(delegate_mock_,
