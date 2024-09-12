@@ -1,5 +1,5 @@
 diff --git a/chrome/browser/ui/views/frame/browser_view_layout.cc b/chrome/browser/ui/views/frame/browser_view_layout.cc
-index 7359b0457bf1734cc8383b7f169c7027ea84db9f..0232e7e7af4fdf607f68b9b424f1b50d5013910d 100644
+index 7359b0457bf17..f5b804366b429 100644
 --- a/chrome/browser/ui/views/frame/browser_view_layout.cc
 +++ b/chrome/browser/ui/views/frame/browser_view_layout.cc
 @@ -73,6 +73,7 @@ bool ConvertedHitTest(views::View* src, views::View* dst, gfx::Point* point) {
@@ -10,3 +10,12 @@ index 7359b0457bf1734cc8383b7f169c7027ea84db9f..0232e7e7af4fdf607f68b9b424f1b50d
    views::View::ConvertPointToTarget(src, dst, point);
    return dst->HitTestPoint(*point);
  }
+@@ -262,7 +263,7 @@ gfx::Size BrowserViewLayout::GetMinimumSize(const views::View* host) const {
+   }
+ 
+   // The minimum height for the normal (tabbed) browser window's contents area.
+-  constexpr int kMainBrowserContentsMinimumHeight = 1;
++  constexpr int kMainBrowserContentsMinimumHeight = 2;
+ 
+   const bool has_tabstrip =
+       delegate_->SupportsWindowFeature(Browser::FEATURE_TABSTRIP);

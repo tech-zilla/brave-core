@@ -81,7 +81,7 @@ int NonClientHitTest(BrowserView* browser_view,
     return HTTOP;
   }
 
-  if (point_in_widget.y() <= (widget_bounds.bottom() - kResizableArea)) {
+  if ((widget_bounds.bottom() - point_in_widget.y()) <= kResizableArea) {
     return HTBOTTOM;
   }
 
